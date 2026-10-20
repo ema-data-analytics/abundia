@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Abundia Recepción</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@400;500;600&display=swap">
+<style>
+/* Layout: panel de trabajo de recepción; barra superior verde; pestañas; agenda del día en columnas por profesional; panel lateral de detalle */
+:root {
+  --marca: #072519; --oro: #a8834f; --oro-claro: #d8bf98; --oro-suave: #efe5d5;
+  --bg: #f3f4ef; --surface: #ffffff; --fg: #13261c; --muted: #5f6b63; --line: #dfe2d9;
+  --e-pend: #8a8f88; --e-pend-bg: #f1f2ee; --e-ver: #a0640f; --e-ver-bg: #fbefd8; --e-conf: #2f6b4f; --e-conf-bg: #e2f0e7;
+  --e-curso: #7a4fa8; --e-curso-bg: #efe6f8; --e-term: #4f5a54; --e-term-bg: #e9ebe6; --e-aus: #b0412e; --e-aus-bg: #f9e3de;
+  --bloq-bg: repeating-linear-gradient(45deg, #e6e8e2 0 6px, #f1f2ee 6px 12px);
+  --f-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --f-body: "Jost", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --oro: #d2b285; --oro-suave: #2b2a1e; --bg: #061e14; --surface: #0c2c1f; --fg: #efe8db; --muted: #a7b2a9; --line: #1f4433;
+  --e-pend: #a9afa7; --e-pend-bg: #16352a; --e-ver: #f0c46a; --e-ver-bg: #3a2f14; --e-conf: #8fdcb0; --e-conf-bg: #143a27;
+  --e-curso: #cfaef0; --e-curso-bg: #2e2240; --e-term: #b9c2bc; --e-term-bg: #1b3a2d; --e-aus: #f39a86; --e-aus-bg: #3d1f19;
+  --bloq-bg: repeating-linear-gradient(45deg, #12301f 0 6px, #0c2c1f 6px 12px); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --oro: #d2b285; --oro-suave: #2b2a1e; --bg: #061e14; --surface: #0c2c1f; --fg: #efe8db; --muted: #a7b2a9; --line: #1f4433;
+  --e-pend: #a9afa7; --e-pend-bg: #16352a; --e-ver: #f0c46a; --e-ver-bg: #3a2f14; --e-conf: #8fdcb0; --e-conf-bg: #143a27;
+  --e-curso: #cfaef0; --e-curso-bg: #2e2240; --e-term: #b9c2bc; --e-term-bg: #1b3a2d; --e-aus: #f39a86; --e-aus-bg: #3d1f19;
+  --bloq-bg: repeating-linear-gradient(45deg, #12301f 0 6px, #0c2c1f 6px 12px); color-scheme: dark }
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.45; margin: 0 }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 60; background: var(--marca) }
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.ancho { max-width: 1240px; margin: 0 auto }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; margin: 0; line-height: 1.15 }
+p { margin: 0 }
+button, select, input, textarea { font: inherit; color: inherit }
+button { cursor: pointer }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px }
+a { color: var(--oro); font-weight: 500 }
+.num { font-variant-numeric: tabular-nums }
+
+.top { background: var(--marca); color: var(--oro-claro); padding-block: 10px }
+.top .ancho { display: flex; align-items: center; gap: 12px; flex-wrap: wrap }
+.top img { width: 40px; height: auto; border-radius: 8px }
+.top h1 { color: #f6efe2; font-size: 1.45rem }
+.top .sub { font-size: .8rem; color: var(--oro-claro) }
+.top .esp { flex: 1 }
+.rol { display: flex; align-items: center; gap: 6px; font-size: .85rem }
+.rol select { background: transparent; border: 1px solid var(--oro); color: var(--oro-claro); border-radius: 8px; padding: 4px 8px }
+.rol select option { color: #13261c }
+.proto { background: var(--oro-suave); font-size: .82rem; padding-block: 7px }
+.proto .ancho { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center }
+.proto b { color: var(--oro) }
+.reloj { display: inline-flex; gap: 8px; align-items: center; margin-left: auto }
+.reloj .h { font-weight: 600; font-variant-numeric: tabular-nums }
+.mini { border: 1px solid var(--oro); color: var(--fg); background: var(--surface); border-radius: 8px; padding: 3px 10px; font-size: .82rem }
+
+.barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-block: 14px 10px }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px }
+.tab { border: 0; background: transparent; border-radius: 9px; padding: 7px 12px; font-weight: 500; display: inline-flex; gap: 6px; align-items: center }
+.tab[aria-selected="true"] { background: var(--marca); color: var(--oro-claro) }
+.badge { background: var(--e-ver-bg); color: var(--e-ver); border-radius: 999px; font-size: .74rem; padding: 0 7px; font-weight: 600 }
+.tab[aria-selected="true"] .badge { background: var(--oro-claro); color: var(--marca) }
+.barra .esp { flex: 1 }
+.btn { border: 0; border-radius: 10px; padding: 9px 14px; font-weight: 600; background: var(--marca); color: var(--oro-claro) }
+.btn.sec { background: var(--surface); color: var(--fg); border: 1px solid var(--line) }
+.btn.peligro { background: var(--e-aus-bg); color: var(--e-aus) }
+.btn:disabled { opacity: .45; cursor: not-allowed }
+:root[data-theme="dark"] .btn:not(.sec):not(.peligro), :root[data-theme="dark"] .tab[aria-selected="true"] { background: var(--oro); color: var(--marca) }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn:not(.sec):not(.peligro), :root:not([data-theme="light"]) .tab[aria-selected="true"] { background: var(--oro); color: var(--marca) } }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 12px }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px }
+.kpi span { font-size: .78rem; color: var(--muted) }
+.kpi b { font-size: 1.25rem; font-variant-numeric: tabular-nums; font-weight: 600 }
+.alerta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--e-aus-bg); color: var(--e-aus); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; font-weight: 500 }
+
+.leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .78rem; color: var(--muted); margin-bottom: 8px }
+.leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px }
+.agenda-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px }
+.agenda { display: grid; grid-template-columns: 54px repeat(3, minmax(170px, 1fr)); min-width: 590px }
+.ag-cab { position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--line); padding: 10px; font-weight: 600; z-index: 2; display: flex; gap: 8px; align-items: center }
+.ag-cab i { width: 10px; height: 10px; border-radius: 50% }
+.ag-horas, .ag-col { position: relative }
+.ag-col { border-left: 1px solid var(--line) }
+.ag-hora { position: absolute; left: 0; right: 0; font-size: .72rem; color: var(--muted); text-align: right; padding-right: 8px; transform: translateY(-7px); font-variant-numeric: tabular-nums }
+.ag-linea { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line) }
+.ag-linea.media { border-top-style: dashed; opacity: .6 }
+.ahora { position: absolute; left: 0; right: 0; border-top: 2px solid var(--e-aus); z-index: 3 }
+.ahora::before { content: ""; position: absolute; left: -4px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--e-aus) }
+.bloque { position: absolute; left: 4px; right: 4px; border-radius: 8px; padding: 4px 8px; font-size: .78rem; overflow: hidden; text-align: left; border: 0; border-left: 4px solid; line-height: 1.25; z-index: 1 }
+.bloque b { font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.bloque span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .85 }
+.bloque:hover { filter: brightness(.97); z-index: 2 }
+.st-pendiente_sena { background: var(--e-pend-bg); color: var(--e-pend); border-color: var(--e-pend); border-style: dashed; border-left-style: solid }
+.st-sena_a_verificar { background: var(--e-ver-bg); color: var(--e-ver); border-color: var(--e-ver) }
+.st-confirmado { background: var(--e-conf-bg); color: var(--e-conf); border-color: var(--e-conf) }
+.st-en_curso { background: var(--e-curso-bg); color: var(--e-curso); border-color: var(--e-curso) }
+.st-terminado { background: var(--e-term-bg); color: var(--e-term); border-color: var(--e-term) }
+.st-ausente { background: var(--e-aus-bg); color: var(--e-aus); border-color: var(--e-aus); text-decoration: line-through }
+.bloqueo { position: absolute; left: 4px; right: 4px; border-radius: 8px; background: var(--bloq-bg); color: var(--muted); font-size: .76rem; padding: 4px 8px; border: 1px dashed var(--line) }
+.demorada { outline: 2px solid var(--e-aus); outline-offset: 1px }
+
+.lista { display: grid; gap: 8px }
+.item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center }
+.item .t { font-weight: 600 }
+.item .d { color: var(--muted); font-size: .88rem }
+.item .acc { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end }
+@media (max-width: 640px) { .item { grid-template-columns: 1fr } .item .acc { justify-content: flex-start } }
+.vacio { padding: 18px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 12px }
+.pill { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: .76rem; font-weight: 600; border: 0 }
+
+.semana { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px }
+.sdia { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 8px }
+.sdia h3 { font-size: 1.2rem }
+.sprof { display: grid; gap: 3px; font-size: .82rem }
+.sbar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden }
+.sbar i { display: block; height: 100% }
+
+/* Panel lateral y modales */
+.velo { position: fixed; inset: 0; background: rgba(4,20,13,.5); z-index: 50; display: flex; justify-content: flex-end }
+.panel { background: var(--surface); width: min(440px, 100%); height: 100%; overflow-y: auto; padding: 18px max(18px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) 18px; display: grid; gap: 14px; align-content: start; padding-top: calc(18px + env(safe-area-inset-top, 0px)) }
+.panel .cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px }
+.panel h2 { font-size: 1.7rem }
+.cerrar { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 4px 10px }
+.dl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 10px; font-size: .92rem; margin: 0 }
+.dl dt { color: var(--muted) }
+.dl dd { margin: 0 }
+.tabla { width: 100%; border-collapse: collapse; font-size: .9rem; font-variant-numeric: tabular-nums }
+.tabla td, .tabla th { padding: 6px 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top }
+.tabla th { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600 }
+.tabla td:last-child, .tabla th:last-child { text-align: right; white-space: nowrap }
+.tabla tfoot td { border-bottom: 0; font-weight: 600 }
+.acciones { display: grid; gap: 8px }
+.campo { display: grid; gap: 4px }
+.campo label { font-size: .86rem; font-weight: 500 }
+.campo input, .campo select, .campo textarea { padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); width: 100% }
+.campo .ayuda { font-size: .78rem; color: var(--muted) }
+.error { color: var(--e-aus); font-size: .85rem }
+.medio { display: grid; grid-template-columns: 1fr 120px auto; gap: 6px }
+.comanda { border: 1px dashed var(--muted); border-radius: 12px; padding: 14px; display: grid; gap: 8px; font-size: .9rem; background: var(--bg) }
+.comanda .pie { text-align: center; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px }
+.wa { background: #e7ddd3; color: #111b21; border-radius: 12px; padding: 10px; display: grid; gap: 6px }
+.wa .msg { background: #fff; border-radius: 0 10px 10px 10px; padding: 9px 11px; font-size: .86rem; white-space: pre-wrap }
+.wa small { color: #54656f }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--marca); color: var(--oro-claro); padding: 10px 16px; border-radius: 10px; z-index: 70; font-weight: 500; max-width: 90vw }
+.nota { font-size: .8rem; color: var(--muted) }
+</style>
+
+<header class="top gut"><div class="ancho">
+  <img src="data:image/webp;base64,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" alt="Abundia" width="40" height="42">
+  <div><h1>Agenda</h1><div class="sub" id="fecha-cab"></div></div>
+  <span class="esp"></span>
+  <label class="rol" for="rol">Entrás como <select id="rol"><option value="recepcion">Recepción</option><option value="duena">Dueña</option></select></label>
+</div></header>
+<div class="proto gut"><div class="ancho">
+  <span><b>Prototipo</b> · clientas, precios y profesionales de ejemplo · no se guarda nada</span>
+  <span class="reloj">Hora simulada <span class="h" id="reloj"></span><button class="mini" id="avanzar" type="button">Avanzar 15 min</button></span>
+</div></div>
+
+<main class="gut"><div class="ancho">
+  <div class="barra">
+    <div class="tabs" role="tablist" id="tabs">
+      <button class="tab" role="tab" data-v="dia" aria-selected="true">Hoy</button>
+      <button class="tab" role="tab" data-v="senas" aria-selected="false">Señas a verificar <span class="badge" id="b-senas"></span></button>
+      <button class="tab" role="tab" data-v="manana" aria-selected="false">Turnos de mañana</button>
+      <button class="tab" role="tab" data-v="semana" aria-selected="false">Semana</button>
+      <button class="tab" role="tab" data-v="caja" aria-selected="false">Caja del día</button>
+    </div>
+    <span class="esp"></span>
+    <button class="btn sec" id="b-bloquear" type="button">Bloquear horario</button>
+    <button class="btn" id="b-nuevo" type="button">+ Nuevo turno</button>
+  </div>
+  <div id="vista"></div>
+</div></main>
+<div id="capa"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+  // ---------- Datos de ejemplo
+  var SERV = {};
+  [['pc', [['lash-conv', 'Lash lifting convencional', 60, 25000], ['lash-cor', 'Lash lifting coreano', 75, 30000], ['cejas', 'Laminado y perfilado de cejas', 45, 22000]]],
+   ['fa', [['dermapen', 'Dermapen', 60, 45000], ['limpieza', 'Limpieza facial', 60, 30000], ['radio', 'Radiofrecuencia', 45, 28000], ['alta', 'Alta frecuencia', 30, 18000]]],
+   ['ma', [['semi-m', 'Esmaltado semipermanente', 60, 15000], ['kapping', 'Kapping gel', 75, 20000], ['soft', 'Soft gel', 90, 25000], ['belleza-m', 'Belleza de manos', 40, 12000], ['remocion', 'Remoción con manicuría', 30, 8000]]],
+   ['pe', [['semi-p', 'Semipermanente con belleza de pies', 75, 22000]]], ['co', [['mioup', 'Mío Up', 60, 35000]]],
+   ['de', [['definitiva', 'Depilación definitiva', 45, 30000], ['espanol', 'Sistema español (cera)', 30, 12000]]],
+   ['la', [['hidra', 'Hidra Lips', 45, 25000], ['bb', 'BB Lips', 60, 28000]]],
+   ['mz', [['mas-rel', 'Masaje relajante', 60, 28000], ['mas-desc', 'Masaje descontracturante', 60, 30000]]]
+  ].forEach(function (c) { c[1].forEach(function (s) { SERV[s[0]] = { id: s[0], nombre: s[1], dur: s[2], precio: s[3], cat: c[0] }; }); });
+  var PROFS = [{ id: 'v', nombre: 'Valentina', color: '#a8834f', cats: ['pc', 'fa', 'la', 'mz'] },
+               { id: 'c', nombre: 'Camila', color: '#2f6b4f', cats: ['ma', 'pe', 'pc'] },
+               { id: 'l', nombre: 'Lucía', color: '#7a4fa8', cats: ['de', 'co', 'fa', 'ma', 'mz'] }];
+  var CFG = { sena: 30, plazo: 30, anula: 3, tolerancia: 10 };
+  var MEDIOS = ['Efectivo', 'Transferencia', 'Tarjeta de débito', 'Tarjeta de crédito', 'QR'];
+  var ABRE = 540, CIERRA = 1200, PX = 1.15;
+
+  var reloj = 11 * 60 + 20, rol = 'recepcion', vista = 'dia', nroT = 50, nroV = 4;
+  function t(h, m) { return h * 60 + (m || 0); }
+  // turno: { nro, clienta, cel, estado, items:[{s, p, ini}], sena, senaPagada, llego, vence, cobro, origen, motivo, dia }
+  var T = [
+    { clienta: 'Agustina Paz', cel: '+5493875100001', estado: 'terminado', items: [{ s: 'lash-cor', p: 'v', ini: t(9) }], llego: t(8, 55), cobro: { medios: [['Transferencia', 21000]], nro: 'V-0001' } },
+    { clienta: 'Romina Ibarra', cel: '+5493875100002', estado: 'terminado', items: [{ s: 'kapping', p: 'c', ini: t(9, 30) }], llego: t(9, 28), cobro: { medios: [['Efectivo', 14000]], nro: 'V-0002' } },
+    { clienta: 'Florencia Ríos', cel: '+5493875100003', estado: 'terminado', items: [{ s: 'definitiva', p: 'l', ini: t(10) }], llego: t(9, 58), cobro: { medios: [['QR', 21000]], nro: 'V-0003' } },
+    { clienta: 'Carla Méndez', cel: '+5493875100004', estado: 'en_curso', items: [{ s: 'cejas', p: 'v', ini: t(10, 30) }, { s: 'hidra', p: 'v', ini: t(11, 15) }], llego: t(10, 27) },
+    { clienta: 'Daniela Soto', cel: '+5493875100005', estado: 'en_curso', items: [{ s: 'semi-m', p: 'c', ini: t(11) }], llego: t(11, 2) },
+    { clienta: 'Paula Gutiérrez', cel: '+5493875100006', estado: 'confirmado', items: [{ s: 'limpieza', p: 'l', ini: t(11, 15) }] },
+    { clienta: 'Natalia Correa', cel: '+5493875100007', estado: 'confirmado', items: [{ s: 'dermapen', p: 'v', ini: t(12, 15) }] },
+    { clienta: 'Julieta Vera', cel: '+5493875100008', estado: 'sena_a_verificar', items: [{ s: 'soft', p: 'c', ini: t(12, 30) }], comprobante: 'transferencia_julieta.jpg' },
+    { clienta: 'Micaela Luna', cel: '+5493875100009', estado: 'pendiente_sena', items: [{ s: 'mioup', p: 'l', ini: t(13) }], vence: t(11, 40) },
+    { clienta: 'Sofía Gómez', cel: '+5493875111111', estado: 'confirmado', items: [{ s: 'belleza-m', p: 'c', ini: t(14) }, { s: 'mas-rel', p: 'l', ini: t(14, 40) }] },
+    { clienta: 'Lorena Díaz', cel: '+5493875100010', estado: 'confirmado', items: [{ s: 'radio', p: 'v', ini: t(15) }] },
+    { clienta: 'Valeria Castro', cel: '+5493875100011', estado: 'confirmado', items: [{ s: 'espanol', p: 'l', ini: t(16) }] },
+    { clienta: 'Antonella Ruiz', cel: '+5493875100012', estado: 'confirmado', items: [{ s: 'semi-p', p: 'c', ini: t(17) }] },
+    { clienta: 'Mariana López', cel: '+5493875100013', estado: 'confirmado', items: [{ s: 'bb', p: 'v', ini: t(18) }] }
+  ];
+  var MANANA = [
+    { clienta: 'Gabriela Torres', cel: '+5493875200001', items: [{ s: 'lash-conv', p: 'v', ini: t(9, 30) }] },
+    { clienta: 'Silvina Ortiz', cel: '+5493875200002', items: [{ s: 'semi-m', p: 'c', ini: t(10) }, { s: 'semi-p', p: 'c', ini: t(11) }] },
+    { clienta: 'Rocío Medina', cel: '+5493875200003', items: [{ s: 'limpieza', p: 'l', ini: t(11) }] },
+    { clienta: 'Belén Acosta', cel: '+5493875200004', items: [{ s: 'definitiva', p: 'l', ini: t(15) }] },
+    { clienta: 'Camila Herrera', cel: '+5493875200005', items: [{ s: 'hidra', p: 'v', ini: t(17) }] }
+  ];
+  var BLOQ = [{ p: 'v', ini: t(13, 15), fin: t(14, 15), motivo: 'Almuerzo' }];
+  var otrosCobros = [];
+  T.forEach(function (x) { init(x); });
+  MANANA.forEach(function (x) { init(x); x.estado = 'confirmado'; x.dia = 1; x.recordado = false; x.confirmo = false; });
+  function init(x) { x.nro = 'T-00' + (nroT++); x.sena = senaDe(x); if (x.dia == null) x.dia = 0; if (x.estado !== 'pendiente_sena' && x.estado !== 'sena_a_verificar') x.senaPagada = x.sena; }
+
+  // ---------- Utilidades
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function pesos(n) { return '$ ' + Math.round(n).toLocaleString('es-AR'); }
+  function hm(m) { var h = Math.floor(m / 60), x = m % 60; return (h < 10 ? '0' : '') + h + ':' + (x < 10 ? '0' : '') + x; }
+  function prof(id) { for (var i = 0; i < PROFS.length; i++) if (PROFS[i].id === id) return PROFS[i]; }
+  function fin(it) { return it.ini + SERV[it.s].dur; }
+  function totalDe(x) { return x.items.reduce(function (a, it) { return a + SERV[it.s].precio; }, 0); }
+  function senaDe(x) { return Math.round(totalDe(x) * CFG.sena / 100 / 100) * 100; }
+  function inicio(x) { return Math.min.apply(null, x.items.map(function (i) { return i.ini; })); }
+  function celTxt(c) { return c.replace('+549', '+54 9 ').replace(/(\d{3})(\d{7})$/, '$1 $2'); }
+  function wa(cel, txt) { return 'https://wa.me/' + cel.replace(/\D/g, '') + '?text=' + encodeURIComponent(txt); }
+  var EST = { pendiente_sena: 'Pendiente de seña', sena_a_verificar: 'Seña a verificar', confirmado: 'Confirmado', en_curso: 'Llegó · en atención', terminado: 'Terminado (cobrado)', ausente: 'Ausente', vencido: 'Vencido', rechazado: 'Rechazado', cancelado_a_tiempo: 'Cancelado a tiempo', cancelado_fuera_termino: 'Cancelado fuera de término' };
+  var ACTIVOS = ['pendiente_sena', 'sena_a_verificar', 'confirmado', 'en_curso', 'terminado', 'ausente'];
+  function hoy() { var d = new Date(); return d; }
+  function fechaLarga(d) { return ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d.getDay()] + ' ' + d.getDate() + ' de ' + ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][d.getMonth()]; }
+  function manana() { var d = hoy(); d.setDate(d.getDate() + 1); return d; }
+  function toast(m) { var e = $('toast'); e.textContent = m; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 2600); }
+  function libre(p, a, b, excepto) {
+    var choca = T.some(function (x) { return x !== excepto && x.dia === 0 && ['pendiente_sena', 'sena_a_verificar', 'confirmado', 'en_curso', 'terminado'].indexOf(x.estado) !== -1 && x.items.some(function (it) { return it.p === p && a < fin(it) && b > it.ini; }); });
+    var bloq = BLOQ.some(function (k) { return k.p === p && a < k.fin && b > k.ini; });
+    return !choca && !bloq && a >= ABRE && b <= CIERRA;
+  }
+
+  // ---------- Reglas automáticas del reloj
+  function automaticos() {
+    var cambios = [];
+    T.forEach(function (x) {
+      if (x.dia !== 0) return;
+      if (x.estado === 'pendiente_sena' && reloj >= x.vence) { x.estado = 'vencido'; x.motivo = 'No subió el comprobante a tiempo'; cambios.push(x.nro + ' venció (no pagó la seña): horario liberado'); }
+      if (x.estado === 'confirmado' && reloj > inicio(x) + CFG.tolerancia) { x.estado = 'ausente'; x.senaPerdida = x.senaPagada || 0; cambios.push(x.nro + ' ' + x.clienta + ': ausente, seña no reintegrable'); }
+    });
+    return cambios;
+  }
+
+  // ---------- Vistas
+  function render() {
+    $('reloj').textContent = hm(reloj); $('fecha-cab').textContent = 'Hoy, ' + fechaLarga(hoy());
+    var nv = T.filter(function (x) { return x.estado === 'sena_a_verificar'; }).length; $('b-senas').textContent = nv || ''; $('b-senas').hidden = !nv;
+    document.querySelectorAll('.tab').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.v === vista); });
+    ({ dia: vDia, senas: vSenas, manana: vManana, semana: vSemana, caja: vCaja })[vista]();
+  }
+  function kpis() {
+    var h = T.filter(function (x) { return x.dia === 0; });
+    var c = function (e) { return h.filter(function (x) { return e.indexOf(x.estado) !== -1; }).length; };
+    return '<div class="kpis">' +
+      '<div class="kpi"><span>Turnos de hoy</span><b>' + c(ACTIVOS) + '</b></div>' +
+      '<div class="kpi"><span>Atendidos</span><b>' + c(['terminado']) + '</b></div>' +
+      '<div class="kpi"><span>En el centro ahora</span><b>' + c(['en_curso']) + '</b></div>' +
+      '<div class="kpi"><span>Por llegar</span><b>' + c(['confirmado']) + '</b></div>' +
+      '<div class="kpi"><span>Ausentes</span><b>' + c(['ausente']) + '</b></div>' +
+      (rol === 'duena' ? '<div class="kpi"><span>Cobrado hoy</span><b>' + pesos(cobradoHoy()) + '</b></div>' : '') + '</div>';
+  }
+  function vDia() {
+    var demoradas = T.filter(function (x) { return x.dia === 0 && x.estado === 'confirmado' && reloj > inicio(x); });
+    var html = kpis();
+    demoradas.forEach(function (x) {
+      var queda = inicio(x) + CFG.tolerancia - reloj;
+      html += '<div class="alerta"><span>⚠ ' + esc(x.clienta) + ' (' + hm(inicio(x)) + ' h) todavía no llegó. Si no llega en ' + queda + ' min queda ausente.</span><button class="btn sec" data-llego="' + x.nro + '">Marcar llegó</button></div>';
+    });
+    html += '<div class="leyenda">' + [['pendiente_sena', 'Pendiente de seña'], ['sena_a_verificar', 'Seña a verificar'], ['confirmado', 'Confirmado'], ['en_curso', 'Llegó / en atención'], ['terminado', 'Cobrado'], ['ausente', 'Ausente']].map(function (e) {
+      return '<span><i class="st-' + e[0] + '" style="border:0"></i>' + e[1] + '</span>'; }).join('') + '<span><i style="background:var(--bloq-bg)"></i>Bloqueado</span></div>';
+    var alto = (CIERRA - ABRE) * PX, y = function (m) { return (m - ABRE) * PX; };
+    html += '<div class="agenda-wrap"><div class="agenda"><div class="ag-cab"></div>' + PROFS.map(function (p) { return '<div class="ag-cab"><i style="background:' + p.color + '"></i>' + p.nombre + '</div>'; }).join('');
+    html += '<div class="ag-horas" style="height:' + alto + 'px">';
+    for (var m = ABRE; m <= CIERRA; m += 60) html += '<div class="ag-hora" style="top:' + y(m) + 'px">' + hm(m) + '</div>';
+    html += '</div>';
+    PROFS.forEach(function (p) {
+      html += '<div class="ag-col" style="height:' + alto + 'px">';
+      for (var m = ABRE; m < CIERRA; m += 30) html += '<div class="ag-linea' + (m % 60 ? ' media' : '') + '" style="top:' + y(m) + 'px"></div>';
+      BLOQ.filter(function (k) { return k.p === p.id; }).forEach(function (k) { html += '<div class="bloqueo" style="top:' + y(k.ini) + 'px;height:' + (k.fin - k.ini) * PX + 'px">' + hm(k.ini) + ' ' + esc(k.motivo) + '</div>'; });
+      T.forEach(function (x) {
+        if (x.dia !== 0 || ACTIVOS.indexOf(x.estado) === -1) return;
+        x.items.forEach(function (it) {
+          if (it.p !== p.id) return;
+          var dem = x.estado === 'confirmado' && reloj > inicio(x);
+          html += '<button type="button" class="bloque st-' + x.estado + (dem ? ' demorada' : '') + '" data-t="' + x.nro + '" style="top:' + y(it.ini) + 'px;height:' + (SERV[it.s].dur * PX - 2) + 'px">' +
+            '<b>' + hm(it.ini) + ' ' + esc(x.clienta) + '</b><span>' + esc(SERV[it.s].nombre) + '</span><span>' + EST[x.estado] + '</span></button>';
+        });
+      });
+      if (reloj >= ABRE && reloj <= CIERRA) html += '<div class="ahora" style="top:' + y(reloj) + 'px"></div>';
+      html += '</div>';
+    });
+    html += '</div></div><p class="nota" style="margin-top:8px">Tocá un turno para ver el detalle y las acciones. Con "Avanzar 15 min" ven cómo el sistema vence señas no pagadas y marca ausentes solo.</p>';
+    $('vista').innerHTML = html;
+    $('vista').querySelectorAll('[data-t]').forEach(function (b) { b.addEventListener('click', function () { abrirTurno(buscar(b.dataset.t)); }); });
+    $('vista').querySelectorAll('[data-llego]').forEach(function (b) { b.addEventListener('click', function () { llego(buscar(b.dataset.llego)); }); });
+  }
+  function buscar(nro) { return T.concat(MANANA).filter(function (x) { return x.nro === nro; })[0]; }
+  function vSenas() {
+    var l = T.filter(function (x) { return x.estado === 'sena_a_verificar'; });
+    $('vista').innerHTML = '<div class="lista">' + (l.length ? l.map(function (x) {
+      return '<div class="item"><div><div class="t">' + x.nro + ' · ' + esc(x.clienta) + '</div><div class="d">' + resumenItems(x) + ' · Seña ' + pesos(x.sena) + ' · comprobante: ' + esc(x.comprobante) + '</div></div>' +
+        '<div class="acc"><button class="btn sec" data-ver="' + x.nro + '">Ver</button><button class="btn" data-aprobar="' + x.nro + '">Aprobar seña</button></div></div>';
+    }).join('') : '<div class="vacio">No hay señas para verificar.</div>') + '</div>' +
+      '<p class="nota" style="margin-top:10px">Al aprobar, el sistema registra la seña como cobro a cuenta de la clienta y arma el mensaje de confirmación para mandarlo por WhatsApp.</p>';
+    $('vista').querySelectorAll('[data-ver]').forEach(function (b) { b.addEventListener('click', function () { abrirTurno(buscar(b.dataset.ver)); }); });
+    $('vista').querySelectorAll('[data-aprobar]').forEach(function (b) { b.addEventListener('click', function () { aprobar(buscar(b.dataset.aprobar)); }); });
+  }
+  function resumenItems(x) { return x.items.map(function (it) { return hm(it.ini) + ' ' + SERV[it.s].nombre + ' (' + prof(it.p).nombre + ')'; }).join(' + '); }
+  function msgRecordatorio(x) { return 'Hola ' + x.clienta.split(' ')[0] + ', te recordamos tu turno de mañana en Abundia:\n' + x.items.map(function (it) { return '• ' + hm(it.ini) + ' h ' + SERV[it.s].nombre + ' con ' + prof(it.p).nombre; }).join('\n') + '\n\n¿Nos confirmás que venís? Respondé SÍ.\nTolerancia: 10 minutos.'; }
+  function vManana() {
+    $('vista').innerHTML = '<h2 style="font-size:1.5rem;margin-bottom:10px">' + fechaLarga(manana()) + '</h2><div class="lista">' + MANANA.map(function (x) {
+      return '<div class="item"><div><div class="t">' + hm(inicio(x)) + ' · ' + esc(x.clienta) + ' <span class="pill" style="background:var(--e-conf-bg);color:var(--e-conf)">' + (x.confirmo ? 'Confirmó asistencia' : x.recordado ? 'Recordatorio enviado' : 'Sin recordar') + '</span></div>' +
+        '<div class="d">' + resumenItems(x) + ' · ' + celTxt(x.cel) + '</div></div><div class="acc">' +
+        '<a class="btn sec" style="text-decoration:none" href="' + wa(x.cel, msgRecordatorio(x)) + '" target="_blank" rel="noopener" data-rec="' + x.nro + '">Enviar recordatorio</a>' +
+        '<button class="btn sec" data-conf="' + x.nro + '"' + (x.confirmo ? ' disabled' : '') + '>Confirmó</button></div></div>';
+    }).join('') + '</div><p class="nota" style="margin-top:10px">"Enviar recordatorio" abre el WhatsApp del centro con el mensaje ya escrito para esa clienta.</p>';
+    $('vista').querySelectorAll('[data-rec]').forEach(function (a) { a.addEventListener('click', function () { buscar(a.dataset.rec).recordado = true; setTimeout(render, 50); }); });
+    $('vista').querySelectorAll('[data-conf]').forEach(function (b) { b.addEventListener('click', function () { var x = buscar(b.dataset.conf); x.confirmo = true; x.recordado = true; render(); }); });
+  }
+  function vSemana() {
+    var html = '<div class="semana">';
+    for (var i = 0; i < 6; i++) {
+      var d = hoy(); d.setDate(d.getDate() + i); if (d.getDay() === 0) { html += '<div class="sdia"><h3>' + fechaLarga(d) + '</h3><span class="nota">Cerrado</span></div>'; continue; }
+      var cap = d.getDay() === 6 ? 300 : 660;
+      html += '<div class="sdia"><h3>' + fechaLarga(d) + '</h3>' + PROFS.map(function (p, j) {
+        var ocup = i === 0 ? T.filter(function (x) { return x.dia === 0 && ACTIVOS.indexOf(x.estado) !== -1; }).reduce(function (a, x) { return a + x.items.filter(function (it) { return it.p === p.id; }).reduce(function (b, it) { return b + SERV[it.s].dur; }, 0); }, 0)
+          : Math.round(cap * (0.25 + ((i * 7 + j * 3) % 6) / 10));
+        var pct = Math.min(100, Math.round(ocup / cap * 100));
+        return '<div class="sprof"><span>' + p.nombre + ' · ' + pct + ' % ocupado</span><div class="sbar"><i style="width:' + pct + '%;background:' + p.color + '"></i></div></div>';
+      }).join('') + '</div>';
+    }
+    $('vista').innerHTML = html + '</div><p class="nota" style="margin-top:10px">Ocupación de cada profesional por día. En el sistema real, al tocar un día se abre su agenda.</p>';
+  }
+  function cobradoHoy() {
+    return T.filter(function (x) { return x.cobro; }).reduce(function (a, x) { return a + x.cobro.medios.reduce(function (b, m) { return b + m[1]; }, 0); }, 0);
+  }
+  function vCaja() {
+    var porMedio = {}; MEDIOS.forEach(function (m) { porMedio[m] = 0; });
+    T.forEach(function (x) { if (x.cobro) x.cobro.medios.forEach(function (m) { porMedio[m[0]] += m[1]; }); });
+    var senasHoy = T.filter(function (x) { return x.senaHoy; }).reduce(function (a, x) { return a + x.senaHoy; }, 0);
+    var perdidas = T.filter(function (x) { return x.senaPerdida; }).reduce(function (a, x) { return a + x.senaPerdida; }, 0);
+    if (rol !== 'duena') {
+      $('vista').innerHTML = '<div class="vacio">Recepción ve el detalle de lo que cobra en cada turno. El resumen de la caja y el cierre del día los ve la dueña.<br><br>Cambiá "Entrás como" a <b>Dueña</b> arriba a la derecha para ver esta pantalla.</div>';
+      return;
+    }
+    $('vista').innerHTML = '<div class="kpis"><div class="kpi"><span>Cobrado en el centro</span><b>' + pesos(cobradoHoy()) + '</b></div>' +
+      '<div class="kpi"><span>Señas recibidas hoy</span><b>' + pesos(senasHoy) + '</b></div><div class="kpi"><span>Señas no reintegrables</span><b>' + pesos(perdidas) + '</b></div></div>' +
+      '<table class="tabla" style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 14px;display:table"><thead><tr><th>Medio</th><th>Importe</th></tr></thead><tbody>' +
+      MEDIOS.map(function (m) { return '<tr><td>' + m + '</td><td>' + pesos(porMedio[m]) + '</td></tr>'; }).join('') +
+      '</tbody><tfoot><tr><td>Total cobrado</td><td>' + pesos(cobradoHoy()) + '</td></tr></tfoot></table>' +
+      '<h3 style="font-size:1.3rem;margin:16px 0 8px">Cobros del día</h3><div class="lista">' + T.filter(function (x) { return x.cobro; }).map(function (x) {
+        return '<div class="item"><div><div class="t">' + x.cobro.nro + ' · ' + esc(x.clienta) + '</div><div class="d">' + resumenItems(x) + ' · ' + x.cobro.medios.map(function (m) { return m[0] + ' ' + pesos(m[1]); }).join(' + ') + '</div></div><div class="acc"><button class="btn sec" data-ver="' + x.nro + '">Ver</button></div></div>';
+      }).join('') + '</div><p class="nota" style="margin-top:10px">El efectivo se controla con el arqueo al cerrar la caja. Las transferencias, QR y tarjetas van a su cuenta.</p>';
+    $('vista').querySelectorAll('[data-ver]').forEach(function (b) { b.addEventListener('click', function () { abrirTurno(buscar(b.dataset.ver)); }); });
+  }
+
+  // ---------- Panel de un turno
+  function cerrarCapa() { $('capa').innerHTML = ''; }
+  function capa(html, alAbrir) {
+    $('capa').innerHTML = '<div class="velo" id="velo"><div class="panel" role="dialog" aria-modal="true">' + html + '</div></div>';
+    $('velo').addEventListener('click', function (e) { if (e.target.id === 'velo') cerrarCapa(); });
+    $('capa').querySelectorAll('.cerrar').forEach(function (b) { b.addEventListener('click', cerrarCapa); });
+    if (alAbrir) alAbrir();
+    var f = $('capa').querySelector('button, input, select'); if (f) f.focus();
+  }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarCapa(); });
+  function msgConfirmacion(x) {
+    return 'Hola ' + x.clienta.split(' ')[0] + ', ¡tu turno en Abundia está confirmado! ✨\n\nTurno ' + x.nro + ' · ' + fechaLarga(x.dia ? manana() : hoy()) + '\n' +
+      x.items.map(function (it) { return '• ' + hm(it.ini) + ' h ' + SERV[it.s].nombre + ' con ' + prof(it.p).nombre; }).join('\n') +
+      '\n\nSeña recibida: ' + pesos(x.senaPagada || 0) + '\nSaldo a abonar en el centro: ' + pesos(totalDe(x) - (x.senaPagada || 0)) + '\n\nTe esperamos 5 minutos antes. Tolerancia: 10 minutos.';
+  }
+  function abrirTurno(x, extra) {
+    var tot = totalDe(x), sp = x.senaPagada || 0, saldo = tot - sp;
+    var html = '<div class="cab"><div><span class="nota">' + x.nro + ' · ' + (x.origen === 'recepcion' ? 'cargado por recepción' : 'pedido por la web') + '</span><h2>' + esc(x.clienta) + '</h2>' +
+      '<span class="pill st-' + x.estado + '" style="border:0">' + EST[x.estado] + '</span></div><button class="cerrar" type="button">Cerrar</button></div>' +
+      '<dl class="dl"><dt>Celular</dt><dd>' + celTxt(x.cel) + ' · <a href="' + wa(x.cel, 'Hola ' + x.clienta.split(' ')[0] + ', te escribimos de Abundia.') + '" target="_blank" rel="noopener">WhatsApp</a></dd>' +
+      '<dt>Día</dt><dd>' + fechaLarga(x.dia ? manana() : hoy()) + '</dd>' + (x.llego ? '<dt>Llegó</dt><dd>' + hm(x.llego) + ' h</dd>' : '') +
+      (x.estado === 'pendiente_sena' ? '<dt>Seña vence</dt><dd>' + hm(x.vence) + ' h</dd>' : '') + (x.motivo ? '<dt>Motivo</dt><dd>' + esc(x.motivo) + '</dd>' : '') + '</dl>' +
+      '<table class="tabla"><thead><tr><th>Servicio</th><th>Importe</th></tr></thead><tbody>' + x.items.map(function (it) {
+        return '<tr><td>' + hm(it.ini) + ' ' + esc(SERV[it.s].nombre) + '<br><span class="nota">con ' + prof(it.p).nombre + '</span></td><td>' + pesos(SERV[it.s].precio) + '</td></tr>'; }).join('') +
+      '</tbody><tfoot><tr><td>Total</td><td>' + pesos(tot) + '</td></tr><tr><td>Seña ' + (sp ? 'pagada' : 'a pagar') + '</td><td>' + (sp ? '− ' + pesos(sp) : pesos(x.sena)) + '</td></tr>' +
+      (x.estado !== 'ausente' ? '<tr><td>Saldo a cobrar</td><td>' + pesos(x.cobro ? 0 : saldo) + '</td></tr>' : '<tr><td>Seña no reintegrable</td><td>' + pesos(x.senaPerdida || 0) + '</td></tr>') + '</tfoot></table>';
+    if (x.comprobante && x.estado === 'sena_a_verificar') html += '<div class="comanda"><b>Comprobante subido por la clienta</b><span class="nota">' + esc(x.comprobante) + ' (en el sistema real se ve la foto)</span></div>';
+    html += '<div class="acciones">';
+    if (x.estado === 'sena_a_verificar') html += '<button class="btn" id="a-aprobar">Aprobar seña</button><button class="btn peligro" id="a-rechazar">Rechazar comprobante</button>';
+    if (x.estado === 'pendiente_sena') html += '<p class="nota">Esperando que la clienta suba el comprobante. Si no lo sube antes de las ' + hm(x.vence) + ' h, el horario se libera solo.</p>';
+    if (x.estado === 'confirmado' && x.dia === 0) html += '<button class="btn" id="a-llego"' + (reloj < inicio(x) - 60 ? ' disabled' : '') + '>Marcar llegó</button>';
+    if (x.estado === 'en_curso') html += '<button class="btn" id="a-cobrar">Cobrar y terminar</button>';
+    if (x.estado === 'terminado' && x.cobro) html += '<button class="btn sec" id="a-comanda">Ver comprobante de cobro</button>';
+    if (['confirmado', 'pendiente_sena', 'sena_a_verificar'].indexOf(x.estado) !== -1) {
+      if (x.estado === 'confirmado') html += '<a class="btn sec" style="text-align:center;text-decoration:none" href="' + wa(x.cel, msgConfirmacion(x)) + '" target="_blank" rel="noopener">Enviar confirmación por WhatsApp</a>';
+      html += '<button class="btn sec" id="a-cancelar">Cancelar turno</button>';
+    }
+    html += '</div>' + (extra || '');
+    capa(html, function () {
+      var on = function (id, f) { var e = $(id); if (e) e.addEventListener('click', f); };
+      on('a-aprobar', function () { aprobar(x); }); on('a-rechazar', function () { rechazar(x); });
+      on('a-llego', function () { llego(x); }); on('a-cobrar', function () { cobrar(x); }); on('a-comanda', function () { comanda(x); });
+      on('a-cancelar', function () { cancelar(x); });
+    });
+  }
+  function aprobar(x) {
+    x.estado = 'confirmado'; x.senaPagada = x.sena; x.senaHoy = x.sena; render();
+    abrirTurno(x, '<div class="wa"><small>Mensaje listo para la clienta</small><div class="msg">' + esc(msgConfirmacion(x)) + '</div>' +
+      '<a class="btn" style="text-align:center;text-decoration:none" href="' + wa(x.cel, msgConfirmacion(x)) + '" target="_blank" rel="noopener">Abrir WhatsApp y enviar</a></div>');
+    toast('Seña aprobada: ' + pesos(x.sena) + ' a cuenta de ' + x.clienta);
+  }
+  function rechazar(x) {
+    capa('<div class="cab"><h2>Rechazar comprobante</h2><button class="cerrar" type="button">Cerrar</button></div><p>' + x.nro + ' · ' + esc(x.clienta) + '</p>' +
+      '<div class="campo"><label for="m-rech">Motivo (se le informa a la clienta)</label><input id="m-rech" value="No figura la transferencia en la cuenta"></div>' +
+      '<button class="btn peligro" id="ok-rech">Rechazar y liberar el horario</button>', function () {
+        $('ok-rech').addEventListener('click', function () { x.estado = 'rechazado'; x.motivo = $('m-rech').value || 'Sin motivo'; cerrarCapa(); render(); toast(x.nro + ' rechazado: horario liberado'); });
+      });
+  }
+  function llego(x) {
+    if (reloj > inicio(x) + CFG.tolerancia) { toast('Pasaron más de 10 minutos: el turno ya quedó ausente.'); return; }
+    x.estado = 'en_curso'; x.llego = reloj; cerrarCapa(); render(); toast(x.clienta + ' llegó a las ' + hm(reloj));
+  }
+  function cancelar(x) {
+    var aTiempo = reloj <= inicio(x) - CFG.anula * 60;
+    capa('<div class="cab"><h2>Cancelar turno</h2><button class="cerrar" type="button">Cerrar</button></div><p>' + x.nro + ' · ' + esc(x.clienta) + ' · ' + hm(inicio(x)) + ' h</p>' +
+      '<p class="pill" style="background:' + (aTiempo ? 'var(--e-conf-bg);color:var(--e-conf)' : 'var(--e-aus-bg);color:var(--e-aus)') + '">' + (aTiempo ? 'Cancela a tiempo (más de ' + CFG.anula + ' h antes)' : 'Fuera de término (menos de ' + CFG.anula + ' h antes)') + '</p>' +
+      '<p class="nota">La seña no se devuelve en ningún caso. ' + (x.senaPagada ? 'Queda ' + pesos(x.senaPagada) + ' como seña no reintegrable.' : 'No había seña pagada.') + '</p>' +
+      '<div class="campo"><label for="m-canc">Motivo</label><input id="m-canc" value="La clienta avisó por WhatsApp"></div>' +
+      '<button class="btn peligro" id="ok-canc">Cancelar y liberar el horario</button>', function () {
+        $('ok-canc').addEventListener('click', function () {
+          x.estado = aTiempo ? 'cancelado_a_tiempo' : 'cancelado_fuera_termino'; x.motivo = $('m-canc').value; if (x.senaPagada) x.senaPerdida = x.senaPagada;
+          cerrarCapa(); render(); toast(x.nro + ' cancelado: horario liberado');
+        });
+      });
+  }
+  function cobrar(x) {
+    var saldo = totalDe(x) - (x.senaPagada || 0);
+    var filas = [['Efectivo', saldo]];
+    function dibujar() {
+      var suma = filas.reduce(function (a, f) { return a + (+f[1] || 0); }, 0), dif = saldo - suma;
+      capa('<div class="cab"><h2>Cobrar</h2><button class="cerrar" type="button">Cerrar</button></div><p>' + x.nro + ' · ' + esc(x.clienta) + '</p>' +
+        '<table class="tabla"><tbody><tr><td>Total de servicios</td><td>' + pesos(totalDe(x)) + '</td></tr><tr><td>Seña ya pagada</td><td>− ' + pesos(x.senaPagada || 0) + '</td></tr></tbody><tfoot><tr><td>Saldo a cobrar</td><td>' + pesos(saldo) + '</td></tr></tfoot></table>' +
+        '<div class="campo"><label>Medios de pago</label>' + filas.map(function (f, i) {
+          return '<div class="medio"><select data-i="' + i + '" aria-label="Medio">' + MEDIOS.map(function (m) { return '<option' + (m === f[0] ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select>' +
+            '<input type="number" min="0" step="100" data-m="' + i + '" value="' + f[1] + '" aria-label="Importe">' + (filas.length > 1 ? '<button class="cerrar" type="button" data-x="' + i + '" aria-label="Quitar">✕</button>' : '<span></span>') + '</div>'; }).join('') +
+        '<button class="btn sec" type="button" id="mas-medio" style="justify-self:start">+ Otro medio</button><span class="ayuda">Se puede pagar con varios medios (ej.: parte efectivo y parte transferencia).</span></div>' +
+        (dif !== 0 ? '<p class="error">' + (dif > 0 ? 'Faltan ' + pesos(dif) : 'Sobran ' + pesos(-dif)) + ' para completar el saldo.</p>' : '') +
+        '<button class="btn" id="ok-cobro"' + (dif !== 0 ? ' disabled' : '') + '>Cobrar ' + pesos(saldo) + ' y terminar el turno</button>', function () {
+          $('capa').querySelectorAll('select[data-i]').forEach(function (s) { s.addEventListener('change', function () { filas[+s.dataset.i][0] = s.value; }); });
+          $('capa').querySelectorAll('input[data-m]').forEach(function (s) { s.addEventListener('change', function () { filas[+s.dataset.m][1] = +s.value || 0; dibujar(); }); });
+          $('capa').querySelectorAll('[data-x]').forEach(function (b) { b.addEventListener('click', function () { filas.splice(+b.dataset.x, 1); dibujar(); }); });
+          $('mas-medio').addEventListener('click', function () { filas.push(['Transferencia', Math.max(0, saldo - filas.reduce(function (a, f) { return a + f[1]; }, 0))]); dibujar(); });
+          $('ok-cobro').addEventListener('click', function () {
+            x.cobro = { medios: filas.filter(function (f) { return f[1] > 0; }), nro: 'V-000' + (nroV++) }; x.estado = 'terminado'; render(); comanda(x); toast('Cobrado ' + pesos(saldo) + ': turno terminado');
+          });
+        });
+    }
+    dibujar();
+  }
+  function comanda(x) {
+    var sp = x.senaPagada || 0;
+    capa('<div class="cab"><h2>Comprobante</h2><button class="cerrar" type="button">Cerrar</button></div>' +
+      '<div class="comanda"><b>ABUNDIA · Centro de estética integral</b><span>' + x.cobro.nro + ' · Turno ' + x.nro + ' · ' + fechaLarga(hoy()) + '</span><span>Clienta: ' + esc(x.clienta) + '</span>' +
+      '<table class="tabla"><tbody>' + x.items.map(function (it) { return '<tr><td>' + esc(SERV[it.s].nombre) + ' (' + prof(it.p).nombre + ')</td><td>' + pesos(SERV[it.s].precio) + '</td></tr>'; }).join('') +
+      '<tr><td>Seña aplicada</td><td>− ' + pesos(sp) + '</td></tr></tbody><tfoot><tr><td>Cobrado</td><td>' + pesos(totalDe(x) - sp) + '</td></tr></tfoot></table>' +
+      '<span class="nota">Pagó con: ' + x.cobro.medios.map(function (m) { return m[0] + ' ' + pesos(m[1]); }).join(' + ') + '</span>' +
+      '<div class="pie">Comprobante no válido como factura · Constancia interna de control</div></div>' +
+      '<a class="btn sec" style="text-align:center;text-decoration:none" href="' + wa(x.cel, 'Hola ' + x.clienta.split(' ')[0] + ', gracias por venir a Abundia. Tu comprobante ' + x.cobro.nro + ': ' + pesos(totalDe(x) - sp) + ' (seña aplicada ' + pesos(sp) + '). Comprobante no válido como factura.') + '" target="_blank" rel="noopener">Enviar por WhatsApp</a>');
+  }
+
+  // ---------- Nuevo turno (recepción) y bloqueos
+  function nuevo() {
+    var st = { cli: '', cel: '', s: 'limpieza', p: '', ini: null, sena: 'pide', motivo: '' };
+    function horas() {
+      var out = [], dur = SERV[st.s].dur, ps = st.p ? [st.p] : PROFS.filter(function (p) { return p.cats.indexOf(SERV[st.s].cat) !== -1; }).map(function (p) { return p.id; });
+      for (var m = Math.ceil((reloj + 30) / 15) * 15; m + dur <= CIERRA; m += 15) { for (var j = 0; j < ps.length; j++) if (libre(ps[j], m, m + dur)) { out.push([m, ps[j]]); break; } }
+      return out;
+    }
+    function dibujar(err) {
+      var hs = horas(), aptas = PROFS.filter(function (p) { return p.cats.indexOf(SERV[st.s].cat) !== -1; });
+      if (st.p && !aptas.some(function (p) { return p.id === st.p; })) st.p = '';
+      capa('<div class="cab"><h2>Nuevo turno</h2><button class="cerrar" type="button">Cerrar</button></div><p class="nota">Para turnos pedidos por teléfono o en el local. Va a la misma agenda que la web.</p>' +
+        '<div class="campo"><label for="n-cli">Clienta</label><input id="n-cli" value="' + esc(st.cli) + '" placeholder="Nombre y apellido"><span class="ayuda">En el sistema real busca a la clienta por nombre o celular.</span></div>' +
+        '<div class="campo"><label for="n-cel">Celular</label><input id="n-cel" type="tel" value="' + esc(st.cel) + '" placeholder="387 5111111"></div>' +
+        '<div class="campo"><label for="n-s">Servicio</label><select id="n-s">' + Object.keys(SERV).map(function (k) { return '<option value="' + k + '"' + (k === st.s ? ' selected' : '') + '>' + SERV[k].nombre + ' · ' + SERV[k].dur + ' min</option>'; }).join('') + '</select></div>' +
+        '<div class="campo"><label for="n-p">Profesional</label><select id="n-p"><option value="">Cualquiera disponible</option>' + aptas.map(function (p) { return '<option value="' + p.id + '"' + (p.id === st.p ? ' selected' : '') + '>' + p.nombre + '</option>'; }).join('') + '</select></div>' +
+        '<div class="campo"><label for="n-h">Horario libre hoy</label><select id="n-h">' + (hs.length ? hs.map(function (h) { return '<option value="' + h[0] + '|' + h[1] + '">' + hm(h[0]) + ' · ' + prof(h[1]).nombre + '</option>'; }).join('') : '<option value="">Sin horarios libres hoy</option>') + '</select></div>' +
+        '<div class="campo"><label for="n-sena">Seña</label><select id="n-sena"><option value="pide"' + (st.sena === 'pide' ? ' selected' : '') + '>Pedir seña del ' + CFG.sena + ' % (' + pesos(Math.round(SERV[st.s].precio * CFG.sena / 100 / 100) * 100) + ')</option>' +
+        '<option value="pagada"' + (st.sena === 'pagada' ? ' selected' : '') + '>Ya pagó la seña (en el local)</option><option value="exenta"' + (st.sena === 'exenta' ? ' selected' : '') + (rol !== 'duena' ? ' disabled' : '') + '>Sin seña (solo la dueña, con motivo)</option></select>' +
+        (rol !== 'duena' ? '<span class="ayuda">Exceptuar la seña lo puede hacer solo la dueña.</span>' : '') + '</div>' +
+        (st.sena === 'exenta' ? '<div class="campo"><label for="n-mot">Motivo</label><input id="n-mot" value="' + esc(st.motivo) + '" placeholder="Ej.: clienta frecuente"></div>' : '') +
+        (err ? '<p class="error">' + err + '</p>' : '') + '<button class="btn" id="n-ok">Guardar turno</button>', function () {
+          $('n-cli').addEventListener('input', function (e) { st.cli = e.target.value; });
+          $('n-cel').addEventListener('input', function (e) { st.cel = e.target.value; });
+          $('n-s').addEventListener('change', function (e) { st.s = e.target.value; dibujar(); });
+          $('n-p').addEventListener('change', function (e) { st.p = e.target.value; dibujar(); });
+          $('n-sena').addEventListener('change', function (e) { st.sena = e.target.value; dibujar(); });
+          if ($('n-mot')) $('n-mot').addEventListener('input', function (e) { st.motivo = e.target.value; });
+          $('n-ok').addEventListener('click', function () {
+            var d = String(st.cel).replace(/\D/g, ''); if (d.charAt(0) === '0') d = d.slice(1); if (d.length === 12) d = d.replace(/^(\d{3})15/, '$1');
+            var h = $('n-h').value;
+            if (!st.cli.trim()) return dibujar('Falta el nombre de la clienta.');
+            if (d.length !== 10) return dibujar('Revisá el celular: código de área + número (10 dígitos).');
+            if (!h) return dibujar('No hay horario libre para ese servicio hoy.');
+            if (st.sena === 'exenta' && !st.motivo.trim()) return dibujar('Para turno sin seña hace falta el motivo.');
+            var x = { clienta: st.cli.trim(), cel: '+549' + d, origen: 'recepcion', items: [{ s: st.s, p: h.split('|')[1], ini: +h.split('|')[0] }] };
+            init(x);
+            if (st.sena === 'pide') { x.estado = 'pendiente_sena'; x.vence = reloj + CFG.plazo; }
+            else if (st.sena === 'pagada') { x.estado = 'confirmado'; x.senaPagada = x.sena; x.senaHoy = x.sena; }
+            else { x.estado = 'confirmado'; x.sena = 0; x.senaPagada = 0; x.motivo = 'Sin seña: ' + st.motivo; }
+            T.push(x); vista = 'dia'; render(); abrirTurno(x); toast('Turno ' + x.nro + ' guardado');
+          });
+        });
+    }
+    dibujar();
+  }
+  function bloquear() {
+    function dibujar(err) {
+      capa('<div class="cab"><h2>Bloquear horario</h2><button class="cerrar" type="button">Cerrar</button></div><p class="nota">Francos, almuerzo, capacitación o una cabina fuera de servicio. Esos horarios no se ofrecen en la web.</p>' +
+        '<div class="campo"><label for="b-p">Profesional</label><select id="b-p">' + PROFS.map(function (p) { return '<option value="' + p.id + '">' + p.nombre + '</option>'; }).join('') + '</select></div>' +
+        '<div class="campo"><label for="b-d">Desde</label><select id="b-d">' + opciones(ABRE, CIERRA - 15) + '</select></div>' +
+        '<div class="campo"><label for="b-h">Hasta</label><select id="b-h">' + opciones(ABRE + 15, CIERRA) + '</select></div>' +
+        '<div class="campo"><label for="b-m">Motivo</label><input id="b-m" value="Capacitación"></div>' + (err ? '<p class="error">' + err + '</p>' : '') +
+        '<button class="btn" id="b-ok">Bloquear</button>', function () {
+          $('b-d').value = String(16 * 60); $('b-h').value = String(17 * 60);
+          $('b-ok').addEventListener('click', function () {
+            var p = $('b-p').value, a = +$('b-d').value, b = +$('b-h').value;
+            if (b <= a) return dibujar('"Hasta" tiene que ser después de "Desde".');
+            var choca = T.filter(function (x) { return x.dia === 0 && ['pendiente_sena', 'sena_a_verificar', 'confirmado', 'en_curso'].indexOf(x.estado) !== -1 && x.items.some(function (it) { return it.p === p && a < fin(it) && b > it.ini; }); });
+            if (choca.length) return dibujar('Ese horario tiene turnos: ' + choca.map(function (x) { return x.nro + ' ' + x.clienta; }).join(', ') + '. Reprogramalos o cancelalos antes de bloquear.');
+            BLOQ.push({ p: p, ini: a, fin: b, motivo: $('b-m').value || 'Bloqueado' }); cerrarCapa(); vista = 'dia'; render(); toast('Horario bloqueado');
+          });
+        });
+    }
+    dibujar();
+  }
+  function opciones(a, b) { var s = ''; for (var m = a; m <= b; m += 15) s += '<option value="' + m + '">' + hm(m) + '</option>'; return s; }
+
+  // ---------- Eventos generales
+  document.querySelectorAll('.tab').forEach(function (b) { b.addEventListener('click', function () { vista = b.dataset.v; render(); }); });
+  $('b-nuevo').addEventListener('click', nuevo);
+  $('b-bloquear').addEventListener('click', bloquear);
+  $('rol').addEventListener('change', function (e) { rol = e.target.value; render(); toast(rol === 'duena' ? 'Ahora ves lo que ve la dueña' : 'Ahora ves lo que ve recepción'); });
+  $('avanzar').addEventListener('click', function () {
+    reloj = Math.min(CIERRA, reloj + 15); var c = automaticos(); render();
+    if (c.length) toast(c.join(' · '));
+  });
+  automaticos(); render();
+})();
+</script>
