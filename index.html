@@ -76,13 +76,22 @@ section > h2 { font-size: 2rem }
 .ver ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; font-size: 0.94rem }
 
 .preguntas { display: grid; gap: 8px }
-.preg { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer }
-.preg input { width: 20px; height: 20px; margin-top: 3px; accent-color: var(--marca); flex: none }
-.preg span { min-width: 0 }
+.preg { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 8px }
+.preg.lista { border-color: var(--ok) }
+.preg-t { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; cursor: text }
+.preg-n { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--oro); color: var(--oro); display: grid; place-items: center; font-size: .78rem; font-weight: 600; margin-top: 2px }
+.preg.lista .preg-n { background: var(--ok); border-color: var(--ok); color: var(--surface) }
 .preg small { display: block; color: var(--muted); font-size: 0.86rem }
-.preg:has(input:checked) { opacity: 0.6 }
-.preg:has(input:checked) b { text-decoration: line-through }
-.grupo { font-size: 1.3rem; margin-top: 10px }
+.preg textarea { font: inherit; font-size: .95rem; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); width: 100%; resize: vertical; min-height: 44px }
+.preg textarea:focus-visible, .quien input:focus-visible { outline: 2px solid var(--oro); outline-offset: 1px }
+.quien { display: grid; gap: 4px; max-width: 420px }
+.quien label { font-weight: 500 }
+.quien input { font: inherit; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg) }
+.enviar { position: sticky; bottom: env(safe-area-inset-bottom, 0px); background: var(--bg); border-top: 1px solid var(--line); padding-block: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; z-index: 5 }
+.enviar .b1 { text-decoration: none; background: var(--marca); color: var(--oro-claro); border: 0; border-radius: 12px; padding: 12px 18px; font-weight: 600; font: inherit; font-weight: 600; cursor: pointer }
+.enviar .b2 { background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 11px 16px; font: inherit; cursor: pointer }
+:root[data-theme="dark"] .enviar .b1 { background: var(--oro); color: var(--marca) }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .enviar .b1 { background: var(--oro); color: var(--marca) } }
 .contador { font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums }
 
 .costo { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--oro); border-radius: 16px; padding: 20px; display: grid; gap: 14px }
@@ -180,42 +189,45 @@ footer { border-top: 1px solid var(--line); padding-top: 18px; color: var(--mute
   <section id="necesitamos">
     <span class="eyebrow">Para avanzar</span>
     <h2>Dudas que necesitamos que nos contesten</h2>
-    <p class="muted">Pueden ir tildando lo que ya tengan. <span class="contador" id="contador"></span></p>
+    <p class="muted">Escriban las respuestas debajo de cada pregunta. Se guardan solas en este celular o computadora: pueden cerrar y seguir otro día desde el mismo aparato. Cuando terminen (o cuando quieran), tocan <b>"Enviar respuestas por WhatsApp"</b> y nos llegan todas juntas. Si no saben alguna, déjenla en blanco. <span class="contador" id="contador"></span></p>
+    <div class="quien"><label for="r-quien">¿Quién contesta?</label><input id="r-quien" placeholder="Nombre" autocomplete="name"></div>
     <div class="preguntas" id="preguntas">
       <h3 class="grupo">Servicios y precios</h3>
-      <label class="preg"><input type="checkbox" data-k="precios"><span><b>Duración y precio de cada servicio</b><small>Si la depilación (definitiva y con cera) se cobra por zona: qué zonas y precio de cada una.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="masajes"><span><b>Qué tipos de masaje hacen</b><small>Nombre, duración y precio.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="grupos"><span><b>Nombres de los grupos de servicios</b><small>Usamos "Pestañas y cejas" y "Facial" para dos grupos que no tenían nombre.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="prep"><span><b>Tiempo de preparación entre clientas</b><small>Si después de algún servicio necesitan minutos para limpiar o preparar la cabina.</small></span></label>
+      <div class="preg" data-p="precios"><label class="preg-t" for="r-precios"><span class="preg-n">1</span><span><b>Duración y precio de cada servicio</b><small>Si la depilación (definitiva y con cera) se cobra por zona: qué zonas y precio de cada una.</small></span></label><textarea id="r-precios" data-k="precios" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="masajes"><label class="preg-t" for="r-masajes"><span class="preg-n">2</span><span><b>Qué tipos de masaje hacen</b><small>Nombre, duración y precio.</small></span></label><textarea id="r-masajes" data-k="masajes" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="grupos"><label class="preg-t" for="r-grupos"><span class="preg-n">3</span><span><b>Nombres de los grupos de servicios</b><small>Usamos "Pestañas y cejas" y "Facial" para dos grupos que no tenían nombre.</small></span></label><textarea id="r-grupos" data-k="grupos" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="prep"><label class="preg-t" for="r-prep"><span class="preg-n">4</span><span><b>Tiempo de preparación entre clientas</b><small>Si después de algún servicio necesitan minutos para limpiar o preparar la cabina.</small></span></label><textarea id="r-prep" data-k="prep" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
       <h3 class="grupo">Profesionales y lugar</h3>
-      <label class="preg"><input type="checkbox" data-k="profes"><span><b>Las 3 profesionales</b><small>Nombre de cada una, qué servicios hace y en qué días y horarios atiende.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="duenas"><span><b>Las dueñas</b><small>Cuántas son y sus nombres, para los usuarios del sistema.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="horario"><span><b>Días y horarios del centro</b><small>Incluye si cortan al mediodía y qué pasa los feriados.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="cabinas"><span><b>Cabinas o boxes</b><small>Cuántos hay y si algún servicio solo se hace en una cabina (por el equipo).</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="simult"><span><b>¿Dos servicios al mismo tiempo?</b><small>Ej.: manos y pies a la vez con dos profesionales. Hoy el sistema los pone uno detrás del otro.</small></span></label>
+      <div class="preg" data-p="profes"><label class="preg-t" for="r-profes"><span class="preg-n">5</span><span><b>Las 3 profesionales</b><small>Nombre de cada una, qué servicios hace y en qué días y horarios atiende.</small></span></label><textarea id="r-profes" data-k="profes" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="duenas"><label class="preg-t" for="r-duenas"><span class="preg-n">6</span><span><b>Las dueñas</b><small>Cuántas son y sus nombres, para los usuarios del sistema.</small></span></label><textarea id="r-duenas" data-k="duenas" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="horario"><label class="preg-t" for="r-horario"><span class="preg-n">7</span><span><b>Días y horarios del centro</b><small>Incluye si cortan al mediodía y qué pasa los feriados.</small></span></label><textarea id="r-horario" data-k="horario" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="cabinas"><label class="preg-t" for="r-cabinas"><span class="preg-n">8</span><span><b>Cabinas o boxes</b><small>Cuántos hay y si algún servicio solo se hace en una cabina (por el equipo).</small></span></label><textarea id="r-cabinas" data-k="cabinas" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="simult"><label class="preg-t" for="r-simult"><span class="preg-n">9</span><span><b>¿Dos servicios al mismo tiempo?</b><small>Ej.: manos y pies a la vez con dos profesionales. Hoy el sistema los pone uno detrás del otro.</small></span></label><textarea id="r-simult" data-k="simult" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
       <h3 class="grupo">Reglas de la seña y los turnos</h3>
-      <label class="preg"><input type="checkbox" data-k="pct"><span><b>Porcentaje de seña</b><small>Se puede probar en el prototipo con "Opciones a decidir".</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="plazo"><span><b>Tiempo para pagar la seña</b><small>30 minutos o 1 hora para transferir y subir el comprobante.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="anula"><span><b>¿2 o 3 horas antes para anular?</b><small>Hoy está en 3 horas.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="antic"><span><b>Anticipación mínima para reservar</b><small>Ej.: no se puede reservar para dentro de menos de 2 horas.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="elige"><span><b>¿La clienta elige la profesional?</b><small>O solo elige el servicio y el centro asigna.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="aviso"><span><b>Si la clienta avisa a tiempo, ¿pierde la seña igual?</b><small>Si la pierde igual, no tiene motivo para avisar. Opción: que le quede a favor para reprogramar una vez.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="centro"><span><b>Si falta una profesional o cancela el centro</b><small>¿La seña le queda a favor a la clienta?</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="exenta"><span><b>¿Quién puede dar un turno sin seña?</b><small>Ej.: a una clienta de confianza. Proponemos: solo las dueñas, con motivo.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="controla"><span><b>¿Quién controla las transferencias y cada cuánto?</b><small>Para que ningún turno pagado quede sin confirmar.</small></span></label>
+      <div class="preg" data-p="pct"><label class="preg-t" for="r-pct"><span class="preg-n">10</span><span><b>Porcentaje de seña</b><small>Se puede probar en el prototipo con "Opciones a decidir".</small></span></label><textarea id="r-pct" data-k="pct" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="plazo"><label class="preg-t" for="r-plazo"><span class="preg-n">11</span><span><b>Tiempo para pagar la seña</b><small>30 minutos o 1 hora para transferir y subir el comprobante.</small></span></label><textarea id="r-plazo" data-k="plazo" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="anula"><label class="preg-t" for="r-anula"><span class="preg-n">12</span><span><b>¿2 o 3 horas antes para anular?</b><small>Hoy está en 3 horas.</small></span></label><textarea id="r-anula" data-k="anula" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="antic"><label class="preg-t" for="r-antic"><span class="preg-n">13</span><span><b>Anticipación mínima para reservar</b><small>Ej.: no se puede reservar para dentro de menos de 2 horas.</small></span></label><textarea id="r-antic" data-k="antic" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="elige"><label class="preg-t" for="r-elige"><span class="preg-n">14</span><span><b>¿La clienta elige la profesional?</b><small>O solo elige el servicio y el centro asigna.</small></span></label><textarea id="r-elige" data-k="elige" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="aviso"><label class="preg-t" for="r-aviso"><span class="preg-n">15</span><span><b>Si la clienta avisa a tiempo, ¿pierde la seña igual?</b><small>Si la pierde igual, no tiene motivo para avisar. Opción: que le quede a favor para reprogramar una vez.</small></span></label><textarea id="r-aviso" data-k="aviso" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="centro"><label class="preg-t" for="r-centro"><span class="preg-n">16</span><span><b>Si falta una profesional o cancela el centro</b><small>¿La seña le queda a favor a la clienta?</small></span></label><textarea id="r-centro" data-k="centro" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="exenta"><label class="preg-t" for="r-exenta"><span class="preg-n">17</span><span><b>¿Quién puede dar un turno sin seña?</b><small>Ej.: a una clienta de confianza. Proponemos: solo las dueñas, con motivo.</small></span></label><textarea id="r-exenta" data-k="exenta" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="controla"><label class="preg-t" for="r-controla"><span class="preg-n">18</span><span><b>¿Quién controla las transferencias y cada cuánto?</b><small>Para que ningún turno pagado quede sin confirmar.</small></span></label><textarea id="r-controla" data-k="controla" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
       <h3 class="grupo">Cobros, comisiones y ventas</h3>
-      <label class="preg"><input type="checkbox" data-k="alias"><span><b>Alias o CBU para las señas</b><small>Y el número de WhatsApp del centro.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="cobro"><span><b>Medios de cobro</b><small>Efectivo, transferencia, tarjeta, QR: cuáles usan.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="comisiones"><span><b>Comisiones</b><small>Si pagan comisión a las profesionales: porcentaje o monto fijo, por servicio.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="packs"><span><b>Packs de sesiones</b><small>Si venden packs, cuántas sesiones traen y si vencen.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="catalogo"><span><b>Productos para el catálogo</b><small>Lista de productos que venden (cremas, etc.) con precio y foto.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="stock"><span><b>Stock de insumos</b><small>Si quieren controlar el stock de los insumos que usan.</small></span></label>
+      <div class="preg" data-p="alias"><label class="preg-t" for="r-alias"><span class="preg-n">19</span><span><b>Alias o CBU para las señas</b><small>Y el número de WhatsApp del centro.</small></span></label><textarea id="r-alias" data-k="alias" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="cobro"><label class="preg-t" for="r-cobro"><span class="preg-n">20</span><span><b>Medios de cobro</b><small>Efectivo, transferencia, tarjeta, QR: cuáles usan.</small></span></label><textarea id="r-cobro" data-k="cobro" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="comisiones"><label class="preg-t" for="r-comisiones"><span class="preg-n">21</span><span><b>Comisiones</b><small>Si pagan comisión a las profesionales: porcentaje o monto fijo, por servicio.</small></span></label><textarea id="r-comisiones" data-k="comisiones" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="packs"><label class="preg-t" for="r-packs"><span class="preg-n">22</span><span><b>Packs de sesiones</b><small>Si venden packs, cuántas sesiones traen y si vencen.</small></span></label><textarea id="r-packs" data-k="packs" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="catalogo"><label class="preg-t" for="r-catalogo"><span class="preg-n">23</span><span><b>Productos para el catálogo</b><small>Lista de productos que venden (cremas, etc.) con precio y foto.</small></span></label><textarea id="r-catalogo" data-k="catalogo" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="stock"><label class="preg-t" for="r-stock"><span class="preg-n">24</span><span><b>Stock de insumos</b><small>Si quieren controlar el stock de los insumos que usan.</small></span></label><textarea id="r-stock" data-k="stock" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
       <h3 class="grupo">Ficha, usuarios y página</h3>
-      <label class="preg"><input type="checkbox" data-k="ficha"><span><b>Ficha de la clienta</b><small>Qué datos de salud piden y si usan consentimiento informado.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="salud"><span><b>¿Recepción puede ver los datos de salud?</b><small>Hoy solo los ven las dueñas y las profesionales.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="usuarios"><span><b>Quién usa el sistema</b><small>Recepción y profesionales: qué puede ver cada una.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="direccion"><span><b>Datos para la página</b><small>Dirección, Instagram y el logo en alta calidad.</small></span></label>
+      <div class="preg" data-p="ficha"><label class="preg-t" for="r-ficha"><span class="preg-n">25</span><span><b>Ficha de la clienta</b><small>Qué datos de salud piden y si usan consentimiento informado.</small></span></label><textarea id="r-ficha" data-k="ficha" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="salud"><label class="preg-t" for="r-salud"><span class="preg-n">26</span><span><b>¿Recepción puede ver los datos de salud?</b><small>Hoy solo los ven las dueñas y las profesionales.</small></span></label><textarea id="r-salud" data-k="salud" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="usuarios"><label class="preg-t" for="r-usuarios"><span class="preg-n">27</span><span><b>Quién usa el sistema</b><small>Recepción y profesionales: qué puede ver cada una.</small></span></label><textarea id="r-usuarios" data-k="usuarios" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
+      <div class="preg" data-p="direccion"><label class="preg-t" for="r-direccion"><span class="preg-n">28</span><span><b>Datos para la página</b><small>Dirección, Instagram y el logo en alta calidad.</small></span></label><textarea id="r-direccion" data-k="direccion" rows="2" placeholder="Escriban acá la respuesta"></textarea></div>
     </div>
+    <div class="enviar"><button type="button" class="b1" id="enviar-wa">Enviar respuestas por WhatsApp</button><button type="button" class="b2" id="copiar-resp">Copiar respuestas</button><span class="contador" id="contador2"></span></div>
+    <textarea id="resp-texto" aria-label="Respuestas para copiar" readonly hidden style="width:100%;min-height:160px"></textarea>
   </section>
 
   <section id="costo">
@@ -252,21 +264,50 @@ footer { border-top: 1px solid var(--line); padding-top: 18px; color: var(--mute
 
 <script>
 (function () {
-  var cajas = Array.prototype.slice.call(document.querySelectorAll('#preguntas input'));
-  var guardado = {};
-  try { guardado = JSON.parse(localStorage.getItem('abundia-preguntas') || '{}'); } catch (e) { guardado = {}; }
-  function contar() {
-    var n = cajas.filter(function (c) { return c.checked; }).length;
-    document.getElementById('contador').textContent = n + ' de ' + cajas.length + ' listas.';
+  var WSP = '5493875058883', CLAVE = 'abundia-respuestas';
+  var areas = Array.prototype.slice.call(document.querySelectorAll('#preguntas textarea'));
+  var quien = document.getElementById('r-quien');
+  var datos = {};
+  try { datos = JSON.parse(localStorage.getItem(CLAVE) || '{}'); } catch (e) { datos = {}; }
+  function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(datos)); } catch (e) {} }
+  function marcar() {
+    var n = 0;
+    areas.forEach(function (a) { var ok = a.value.trim() !== ''; a.closest('.preg').classList.toggle('lista', ok); if (ok) n++; });
+    var txt = n + ' de ' + areas.length + ' respondidas.';
+    document.getElementById('contador').textContent = txt; document.getElementById('contador2').textContent = txt;
   }
-  cajas.forEach(function (c) {
-    c.checked = !!guardado[c.dataset.k];
-    c.addEventListener('change', function () {
-      guardado[c.dataset.k] = c.checked;
-      try { localStorage.setItem('abundia-preguntas', JSON.stringify(guardado)); } catch (e) {}
-      contar();
-    });
+  areas.forEach(function (a) {
+    a.value = datos[a.dataset.k] || '';
+    a.addEventListener('input', function () { datos[a.dataset.k] = a.value; guardar(); marcar(); });
   });
-  contar();
+  quien.value = datos.__quien || '';
+  quien.addEventListener('input', function () { datos.__quien = quien.value; guardar(); });
+  function armar() {
+    var lineas = ['*Respuestas Abundia*' + (quien.value.trim() ? ' (contesta ' + quien.value.trim() + ')' : ''), ''];
+    var grupo = null;
+    document.querySelectorAll('#preguntas > h3, #preguntas > .preg').forEach(function (el) {
+      if (el.tagName === 'H3') { grupo = el.textContent; return; }
+      var a = el.querySelector('textarea'); if (!a.value.trim()) return;
+      if (grupo) { lineas.push('— ' + grupo.toUpperCase() + ' —'); grupo = null; }
+      lineas.push(el.querySelector('.preg-n').textContent + '. ' + el.querySelector('b').textContent + ': ' + a.value.trim());
+    });
+    var vacias = areas.filter(function (a) { return !a.value.trim(); }).map(function (a) { return a.closest('.preg').querySelector('.preg-n').textContent; });
+    if (vacias.length) { lineas.push(''); lineas.push('Sin responder todavía: ' + vacias.join(', ')); }
+    return lineas.join('\n');
+  }
+  document.getElementById('enviar-wa').addEventListener('click', function () {
+    if (!areas.some(function (a) { return a.value.trim(); })) { alerta('Todavía no escribieron ninguna respuesta.'); return; }
+    var url = 'https://wa.me/' + WSP + '?text=' + encodeURIComponent(armar());
+    var w = window.open(url, '_blank', 'noopener');
+    if (!w) location.href = url;
+  });
+  document.getElementById('copiar-resp').addEventListener('click', function () {
+    var t = armar(), caja = document.getElementById('resp-texto'), b = this;
+    var ok = function () { b.textContent = 'Copiadas'; setTimeout(function () { b.textContent = 'Copiar respuestas'; }, 1600); };
+    var manual = function () { caja.hidden = false; caja.value = t; caja.focus(); caja.select(); b.textContent = 'Seleccionadas: copiá con Ctrl+C'; };
+    try { navigator.clipboard.writeText(t).then(ok, manual); } catch (e) { manual(); }
+  });
+  function alerta(m) { var c = document.getElementById('contador2'); c.textContent = m; setTimeout(marcar, 2500); }
+  marcar();
 })();
 </script>
