@@ -82,6 +82,7 @@ section > h2 { font-size: 2rem }
 .preg small { display: block; color: var(--muted); font-size: 0.86rem }
 .preg:has(input:checked) { opacity: 0.6 }
 .preg:has(input:checked) b { text-decoration: line-through }
+.grupo { font-size: 1.3rem; margin-top: 10px }
 .contador { font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums }
 
 .costo { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--oro); border-radius: 16px; padding: 20px; display: grid; gap: 14px }
@@ -107,7 +108,7 @@ footer { border-top: 1px solid var(--line); padding-top: 18px; color: var(--mute
 
 <nav class="indice gut" aria-label="Contenido"><div class="col">
   <a href="#que-es">Qué es</a><a href="#turno">Cómo funciona un turno</a><a href="#incluye">Qué incluye</a>
-  <a href="#ver">Ver el prototipo</a><a href="#necesitamos">Qué necesitamos</a><a href="#costo">Costo</a><a href="#sigue">Cómo sigue</a>
+  <a href="#ver">Prototipos</a><a href="#necesitamos">Dudas</a><a href="#costo">Base de datos</a><a href="#sigue">Cómo sigue</a>
 </div></nav>
 
 <main class="gut"><div class="col">
@@ -146,12 +147,13 @@ footer { border-top: 1px solid var(--line); padding-top: 18px; color: var(--mute
     <h2>Qué incluye</h2>
     <div class="modulos">
       <div class="modulo"><h3>Turnos online</h3><span class="est curso">Prototipo para ver</span><p>Página pública de reservas con seña, constancia de turno y consulta de turno.</p></div>
-      <div class="modulo"><h3>Agenda de recepción</h3><span class="est">Próximo</span><p>Día y semana por profesional y cabina. Aprobar señas, marcar "Llegó", cobrar, reprogramar, bloquear horarios (feriados, francos).</p></div>
+      <div class="modulo"><h3>Agenda de recepción</h3><span class="est curso">Prototipo para ver</span><p>Día y semana por profesional y cabina. Aprobar señas, marcar "Llegó", cobrar, reprogramar, bloquear horarios (feriados, francos).</p></div>
       <div class="modulo"><h3>Clientas y ficha</h3><span class="est">Próximo</span><p>Historial de turnos y tratamientos. Ficha de salud, consentimientos y fotos antes/después, visibles solo para dueñas y profesionales.</p></div>
       <div class="modulo"><h3>Servicios, precios y packs</h3><span class="est">Próximo</span><p>Lista de servicios con duración y precio. Packs de sesiones con su saldo por clienta.</p></div>
       <div class="modulo"><h3>Cobros, caja y cuenta corriente</h3><span class="est">Próximo</span><p>Cobro en uno o varios medios, caja diaria con arqueo, bancos y billeteras, saldos a favor y en contra de cada clienta.</p></div>
       <div class="modulo"><h3>Comisiones a profesionales</h3><span class="est">Próximo</span><p>Liquidación por período según los servicios atendidos y cobrados, por porcentaje o monto fijo.</p></div>
       <div class="modulo"><h3>Compras, proveedores y pagos</h3><span class="est">Próximo</span><p>Compras de insumos y productos, cuenta de cada proveedor y pagos.</p></div>
+      <div class="modulo"><h3>Catálogo de productos</h3><span class="est">Próximo</span><p>Vidriera online de productos con carrito y pedido por WhatsApp, como una tienda.</p></div>
       <div class="modulo"><h3>Gastos y stock</h3><span class="est">Próximo</span><p>Gastos del centro y stock de insumos y productos de reventa.</p></div>
       <div class="modulo"><h3>Reportes</h3><span class="est">Próximo</span><p>Ingresos, turnos por profesional y servicio, ausencias, señas perdidas y resultado del mes. Exportación a Excel y PDF.</p></div>
       <div class="modulo"><h3>Usuarios y permisos</h3><span class="est">Próximo</span><p>Dueñas, recepción y profesionales, cada una con lo que le corresponde ver.</p></div>
@@ -162,45 +164,75 @@ footer { border-top: 1px solid var(--line); padding-top: 18px; color: var(--mute
   <section id="ver">
     <div class="ver">
       <span class="eyebrow" style="color:var(--oro-claro)">Para mirar y probar</span>
-      <h3>Prototipo de la página de turnos</h3>
-      <p>Así va a ver la página la clienta, con el logo y los colores de Abundia. Se puede recorrer completa: reservar, pagar la seña, ver la constancia y los mensajes de WhatsApp.</p>
-      <ul><li>Los servicios son los de Abundia. Precios, duraciones y nombres de profesionales son de ejemplo.</li>
-        <li>El botón dorado <b>"Opciones a decidir"</b> permite probar las reglas que faltan definir.</li>
-        <li>No guarda nada: es para ver cómo funciona.</li></ul>
-      <a class="btn" href="turnos.html" >Abrir el prototipo</a>
+      <h3>Página de turnos (lo que ve la clienta)</h3>
+      <p>Con el logo y los colores de Abundia. Se recorre completa: reservar, pagar la seña, ver la constancia del turno y los mensajes de WhatsApp. El botón dorado "Opciones a decidir" permite probar las reglas que faltan definir.</p>
+      <a class="btn" href="turnos.html">Abrir la página de turnos</a>
     </div>
+    <div class="ver">
+      <span class="eyebrow" style="color:var(--oro-claro)">Para mirar y probar</span>
+      <h3>Agenda de recepción (lo que usa el centro)</h3>
+      <p>El día por profesional: aprobar señas, marcar "Llegó", cobrar con uno o varios medios, cancelar, cargar turnos por teléfono, bloquear horarios y mandar recordatorios. Con "Avanzar 15 min" se ve cómo el sistema vence señas no pagadas y marca ausentes solo. Arriba se puede cambiar entre Recepción y Dueña.</p>
+      <a class="btn" href="recepcion.html">Abrir la agenda de recepción</a>
+    </div>
+    <p class="muted">Servicios reales de Abundia. Precios, duraciones, clientas y nombres de profesionales son de ejemplo. No se guarda nada.</p>
   </section>
 
   <section id="necesitamos">
     <span class="eyebrow">Para avanzar</span>
-    <h2>Qué necesitamos de ustedes</h2>
+    <h2>Dudas que necesitamos que nos contesten</h2>
     <p class="muted">Pueden ir tildando lo que ya tengan. <span class="contador" id="contador"></span></p>
     <div class="preguntas" id="preguntas">
-      <label class="preg"><input type="checkbox" data-k="precios"><span><b>Duración y precio de cada servicio</b><small>Si la depilación se cobra por zona, qué zonas y precio de cada una.</small></span></label>
+      <h3 class="grupo">Servicios y precios</h3>
+      <label class="preg"><input type="checkbox" data-k="precios"><span><b>Duración y precio de cada servicio</b><small>Si la depilación (definitiva y con cera) se cobra por zona: qué zonas y precio de cada una.</small></span></label>
       <label class="preg"><input type="checkbox" data-k="masajes"><span><b>Qué tipos de masaje hacen</b><small>Nombre, duración y precio.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="profes"><span><b>Las profesionales</b><small>Nombre de cada una, qué servicios hace y su horario.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="horario"><span><b>Días y horarios de atención del centro</b><small>Incluye si cortan al mediodía.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="grupos"><span><b>Nombres de los grupos de servicios</b><small>Usamos "Pestañas y cejas" y "Facial" para dos grupos que no tenían nombre.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="prep"><span><b>Tiempo de preparación entre clientas</b><small>Si después de algún servicio necesitan minutos para limpiar o preparar la cabina.</small></span></label>
+      <h3 class="grupo">Profesionales y lugar</h3>
+      <label class="preg"><input type="checkbox" data-k="profes"><span><b>Las 3 profesionales</b><small>Nombre de cada una, qué servicios hace y en qué días y horarios atiende.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="duenas"><span><b>Las dueñas</b><small>Cuántas son y sus nombres, para los usuarios del sistema.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="horario"><span><b>Días y horarios del centro</b><small>Incluye si cortan al mediodía y qué pasa los feriados.</small></span></label>
       <label class="preg"><input type="checkbox" data-k="cabinas"><span><b>Cabinas o boxes</b><small>Cuántos hay y si algún servicio solo se hace en una cabina (por el equipo).</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="reglas"><span><b>Reglas de la seña y los turnos</b><small>Porcentaje de seña, tiempo para pagarla, si la clienta elige profesional, si dos servicios pueden hacerse al mismo tiempo. Se pueden probar en el prototipo.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="simult"><span><b>¿Dos servicios al mismo tiempo?</b><small>Ej.: manos y pies a la vez con dos profesionales. Hoy el sistema los pone uno detrás del otro.</small></span></label>
+      <h3 class="grupo">Reglas de la seña y los turnos</h3>
+      <label class="preg"><input type="checkbox" data-k="pct"><span><b>Porcentaje de seña</b><small>Se puede probar en el prototipo con "Opciones a decidir".</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="plazo"><span><b>Tiempo para pagar la seña</b><small>30 minutos o 1 hora para transferir y subir el comprobante.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="anula"><span><b>¿2 o 3 horas antes para anular?</b><small>Hoy está en 3 horas.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="antic"><span><b>Anticipación mínima para reservar</b><small>Ej.: no se puede reservar para dentro de menos de 2 horas.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="elige"><span><b>¿La clienta elige la profesional?</b><small>O solo elige el servicio y el centro asigna.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="aviso"><span><b>Si la clienta avisa a tiempo, ¿pierde la seña igual?</b><small>Si la pierde igual, no tiene motivo para avisar. Opción: que le quede a favor para reprogramar una vez.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="centro"><span><b>Si falta una profesional o cancela el centro</b><small>¿La seña le queda a favor a la clienta?</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="exenta"><span><b>¿Quién puede dar un turno sin seña?</b><small>Ej.: a una clienta de confianza. Proponemos: solo las dueñas, con motivo.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="controla"><span><b>¿Quién controla las transferencias y cada cuánto?</b><small>Para que ningún turno pagado quede sin confirmar.</small></span></label>
+      <h3 class="grupo">Cobros, comisiones y ventas</h3>
       <label class="preg"><input type="checkbox" data-k="alias"><span><b>Alias o CBU para las señas</b><small>Y el número de WhatsApp del centro.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="cobro"><span><b>Medios de cobro</b><small>Efectivo, transferencia, tarjeta, QR: cuáles usan.</small></span></label>
       <label class="preg"><input type="checkbox" data-k="comisiones"><span><b>Comisiones</b><small>Si pagan comisión a las profesionales: porcentaje o monto fijo, por servicio.</small></span></label>
       <label class="preg"><input type="checkbox" data-k="packs"><span><b>Packs de sesiones</b><small>Si venden packs, cuántas sesiones traen y si vencen.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="productos"><span><b>Productos e insumos</b><small>Si venden productos (cremas, etc.) y si quieren controlar el stock de insumos.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="catalogo"><span><b>Productos para el catálogo</b><small>Lista de productos que venden (cremas, etc.) con precio y foto.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="stock"><span><b>Stock de insumos</b><small>Si quieren controlar el stock de los insumos que usan.</small></span></label>
+      <h3 class="grupo">Ficha, usuarios y página</h3>
       <label class="preg"><input type="checkbox" data-k="ficha"><span><b>Ficha de la clienta</b><small>Qué datos de salud piden y si usan consentimiento informado.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="usuarios"><span><b>Quién usa el sistema</b><small>Nombres de las dueñas, recepción y profesionales, y qué puede ver cada una.</small></span></label>
-      <label class="preg"><input type="checkbox" data-k="cobro"><span><b>Medios de cobro</b><small>Efectivo, transferencia, tarjeta, QR: cuáles usan.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="salud"><span><b>¿Recepción puede ver los datos de salud?</b><small>Hoy solo los ven las dueñas y las profesionales.</small></span></label>
+      <label class="preg"><input type="checkbox" data-k="usuarios"><span><b>Quién usa el sistema</b><small>Recepción y profesionales: qué puede ver cada una.</small></span></label>
       <label class="preg"><input type="checkbox" data-k="direccion"><span><b>Datos para la página</b><small>Dirección, Instagram y el logo en alta calidad.</small></span></label>
     </div>
   </section>
 
   <section id="costo">
-    <span class="eyebrow">Inversión mensual</span>
-    <h2>Costo</h2>
+    <span class="eyebrow">Costo mensual</span>
+    <h2>Base de datos</h2>
+    <p class="lead">El sistema guarda toda la información de Abundia en una base de datos en la nube, separada de cualquier otro cliente.</p>
     <div class="costo">
-      <div class="c-fila"><b>Base de datos y alojamiento</b><span class="imp">$ 50.000</span><span class="d">Servidor y base de datos propia de Abundia en la nube, con copias de seguridad.</span></div>
-      <div class="c-fila"><b>Servicio EMA Data Analytics</b><span class="imp">$ 150.000</span><span class="d">Desarrollo del sistema, puesta en marcha, mantenimiento y soporte. Precio especial de lanzamiento.</span></div>
-      <div class="c-total"><b>Total mensual</b><span class="imp">$ 200.000</span></div>
-      <ul><li>Valores en pesos, por mes.</li><li>Se ajustan cada 3 meses por índice de inflación.</li></ul>
+      <div class="c-fila"><b>Base de datos y alojamiento</b><span class="imp">$ 50.000</span><span class="d">Por mes. Servicio Supabase (plan profesional), contratado en dólares.</span></div>
+      <ul>
+        <li><b>Base de datos propia de Abundia:</b> turnos, clientas, servicios, cobros, caja, compras y gastos.</li>
+        <li><b>Copia de seguridad diaria</b> automática, para recuperar la información ante cualquier problema.</li>
+        <li><b>Archivos:</b> comprobantes de seña que suben las clientas, fotos antes/después y consentimientos.</li>
+        <li><b>Usuarios con contraseña segura</b> para dueñas, recepción y profesionales, cada una con sus permisos.</li>
+        <li><b>Funciona las 24 horas</b>, para que las clientas reserven en cualquier momento.</li>
+        <li>La página de reservas y el sistema se publican sin costo adicional de alojamiento.</li>
+      </ul>
+      <p class="aviso">El servicio de desarrollo, puesta en marcha y soporte lo conversamos en persona.</p>
     </div>
   </section>
 
@@ -208,8 +240,8 @@ footer { border-top: 1px solid var(--line); padding-top: 18px; color: var(--mute
     <span class="eyebrow">Próximos pasos</span>
     <h2>Cómo sigue</h2>
     <ol class="circuito">
-      <li><b>Revisan el prototipo y nos pasan los datos</b><span>Con la lista de arriba completamos servicios, precios, profesionales y reglas.</span></li>
-      <li><b>Prototipo de la agenda de recepción</b><span>La pantalla del día a día del centro, para que la vean antes de construirla.</span></li>
+      <li><b>Revisan los prototipos y contestan las dudas</b><span>Con la lista de arriba completamos servicios, precios, profesionales y reglas.</span></li>
+      <li><b>Prototipos del resto</b><span>Catálogo de productos, ficha de la clienta, panel de las dueñas y comisiones.</span></li>
       <li><b>Construcción y pruebas</b><span>Cada parte se prueba completa antes de entregarla.</span></li>
       <li><b>Puesta en marcha</b><span>Carga de servicios y profesionales, usuarios para cada una y acompañamiento en los primeros días.</span></li>
     </ol>
