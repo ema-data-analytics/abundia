@@ -370,7 +370,7 @@ async function reprogramar(t) {
   elegirHorarios($('#rh', c), lineas, fecha, listo, t.id);
   $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
     try { await rpc('turno_reprogramar', { p_turno: t.id, p_items: lineas.map((l) => ({ servicio_id: l.servicio_id, profesional_id: l.profesional_id, cantidad: l.cantidad, inicio: l.inicio })), p_motivo: $('#mot', c).value });
-      cerrarModal(); mostrar('agenda'); } catch (e) { errorEn($('#err', c), e); }
+      FECHA = diaISO(lineas[0].inicio); cerrarModal(); mostrar('agenda'); } catch (e) { errorEn($('#err', c), e); }
   });
 }
 
