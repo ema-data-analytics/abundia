@@ -39,6 +39,7 @@ nav.tabs { background: var(--marca-2); position: sticky; top: 56px; z-index: 19 
 nav.tabs .col { display: flex; overflow-x: auto; gap: 2px }
 nav.tabs button { background: none; border: 0; color: var(--oro-claro); padding: 11px 14px; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; opacity: .8 }
 nav.tabs button[aria-current="page"] { border-bottom-color: var(--oro); opacity: 1 }
+@media (max-width: 640px) { nav.tabs .col { gap: 0 } nav.tabs button { flex: 1 1 0; min-width: 0; padding: 10px 2px; font-size: .8rem; white-space: normal; line-height: 1.15; text-align: center } }
 main { padding-block: 16px 60px }
 .vista { display: grid; gap: 14px }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px }
@@ -80,6 +81,7 @@ main { padding-block: 16px 60px }
 .horas button[aria-pressed="true"] { background: var(--marca); color: var(--oro-claro); border-color: var(--marca) }
 .lista { display: grid; gap: 8px }
 .item { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-align: left; width: 100% }
+.item.det { flex-wrap: wrap } .item.det .fila { flex-wrap: wrap; min-width: 0 } .item.det select { max-width: 100% }
 .tabla { width: 100%; border-collapse: collapse; font-size: .92rem }
 .tabla th, .tabla td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line) }
 .tabla td.n, .tabla th.n { text-align: right; font-variant-numeric: tabular-nums }
@@ -152,7 +154,7 @@ function pantallaLogin(msg) {
     (msg ? '<p class="aviso">' + esc(msg) + '</p>' : '') +
     '<div class="campo"><label for="usuario">Usuario</label><input id="usuario" autocomplete="username" autocapitalize="none" required></div>' +
     '<div class="campo"><label for="clave">Contraseña</label><input id="clave" type="password" autocomplete="current-password" required></div>' +
-    '<button class="btn" type="submit">Entrar</button><div id="lerr"></div></form></div>';
+    '<button class="btn" type="submit">Entrar</button><div id="lerr"></div><p style="text-align:center;margin-top:14px"><a href="manual.html" target="_blank" rel="noopener" id="ayudaLogin">¿Primera vez? Abrí el manual</a></p></form></div>';
   $('#flogin').onsubmit = async (e) => {
     e.preventDefault();
     const u = $('#usuario').value.trim().toLowerCase(), c = $('#clave').value;
@@ -187,7 +189,7 @@ async function arrancar() {
   if (!YO || !YO.es_admin) { await sb.auth.signOut(); return pantallaLogin('Ese usuario no tiene acceso a la gestión.'); }
   const vistas = [['agenda', 'Agenda'], ['nuevo', 'Nuevo turno'], ['caja', 'Caja'], ['clientas', 'Clientas'], ['ajustes', 'Ajustes']];
   raiz.innerHTML = '<header class="top gut"><div class="col"><img src="' + LOGO + '" alt=""><span class="quien">' + esc(YO.nombre) + (YO.es_super ? ' · superusuario' : ' · administradora') + '</span>' +
-    '<a href="' + PUBLICA + '" target="_blank" rel="noopener"><span class="largo">Ver página pública</span><span class="corto">Página</span></a><button type="button" id="mclave">Contraseña</button><button type="button" id="salir">Salir</button></div></header>' +
+    '<a href="' + PUBLICA + '" target="_blank" rel="noopener"><span class="largo">Ver página pública</span><span class="corto">Página</span></a><a href="manual.html" target="_blank" rel="noopener" id="ayuda">Ayuda</a><button type="button" id="mclave">Contraseña</button><button type="button" id="salir">Salir</button></div></header>' +
     '<nav class="tabs gut"><div class="col">' + vistas.map(([k, n]) => '<button type="button" data-v="' + k + '">' + n + '</button>').join('') + '</div></nav>' +
     '<main class="gut"><div class="col" id="vista"></div></main>';
   $$('nav.tabs button').forEach((b) => b.onclick = () => mostrar(b.dataset.v));
@@ -402,7 +404,7 @@ async function vNuevo(el) {
     } catch (e) { errorEn($('#bcr'), e); } }, 300); };
   const pintarDet = () => {
     $('#det').innerHTML = N.lineas.map((l, k) => { const s = servs.find((x) => x.id === l.servicio_id);
-      return '<div class="item"><b>' + esc(s.nombre) + '</b><span class="fila">' + (s.max_zonas > 1 ? '<label>Zonas <select data-z="' + k + '">' + Array.from({ length: s.max_zonas }, (_, i) => '<option' + (i + 1 === l.cantidad ? ' selected' : '') + '>' + (i + 1) + '</option>').join('') + '</select></label>' : '') +
+      return '<div class="item det"><b>' + esc(s.nombre) + '</b><span class="fila">' + (s.max_zonas > 1 ? '<label>Zonas <select data-z="' + k + '">' + Array.from({ length: s.max_zonas }, (_, i) => '<option' + (i + 1 === l.cantidad ? ' selected' : '') + '>' + (i + 1) + '</option>').join('') + '</select></label>' : '') +
         '<select data-p="' + k + '"><option value="">Cualquier profesional</option>' + s.profesionales.map((p) => '<option value="' + p.id + '"' + (p.id === l.profesional_id ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</select></span></div>'; }).join('');
     $$('[data-z]', $('#det')).forEach((x) => x.onchange = () => { N.lineas[+x.dataset.z].cantidad = +x.value; horarios(); });
     $$('[data-p]', $('#det')).forEach((x) => x.onchange = () => { N.lineas[+x.dataset.p].profesional_id = x.value ? +x.value : null; horarios(); });
