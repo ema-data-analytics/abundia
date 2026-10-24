@@ -10,7 +10,7 @@
 header{background:var(--marca);color:#efe8db;border-radius:14px;padding:22px 26px;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
 header img{height:78px;background:#fff;border-radius:10px;padding:6px}
 h1{font:600 34px/1.1 var(--fd);margin:0} header p{margin:4px 0 0;color:#d8bf98}
-h2{font:600 26px/1.2 var(--fd);margin:34px 0 10px;color:var(--marca)}
+h2{font:600 26px/1.2 var(--fd);margin:34px 0 10px;color:var(--marca)} h3{font:600 15px/1.3 var(--fb);margin:14px 0 6px;color:var(--marca)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:18px}
 .k{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 .k b{display:block;font:700 30px/1.1 var(--fb);color:var(--marca)} .k span{color:var(--muted);font-size:13.5px}
@@ -34,7 +34,7 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
  header{-webkit-print-color-adjust:exact;print-color-adjust:exact} *{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 @media print{header{padding:10px 16px} header img{height:44px} h1{font-size:24px} .kpis{margin-top:8px;gap:8px} .k{padding:8px 12px} .k b{font-size:20px}
  .k b[style]{font-size:12px!important} h2{margin-top:10px;font-size:20px} .card{padding:10px} .ley{margin:2px 0}
- .gantt svg{height:122mm!important;width:auto!important;max-width:100%;margin:0 auto} .gcard{break-inside:auto!important} h2.g{break-after:auto} .nota{margin:4px 0 0}
+ .gantt svg{min-width:0!important;width:100%!important;height:auto!important} .gcard{break-inside:auto!important} h3{margin:4px 0} h2.g{break-before:page} ul.falta li{margin:3px 0} .nota{margin:4px 0 0}
  .salto{break-before:page} ol.reg li{padding:5px 0}}
 @page{size:A4 landscape;margin:10mm}
 </style></head><body><div class="wrap">
@@ -42,162 +42,306 @@ footer{margin-top:34px;color:var(--muted);font-size:12.5px;text-align:center}
 <div><h1>Avance del sistema</h1><p>Sistema de turnos y gestión de Abundia · actualizado al 24/10/2026</p></div></header>
 
 <div class="kpis">
- <div class="k"><span>Avance general</span><b>22 %</b><div class="big"><i style="width:22%"></i></div></div>
- <div class="k"><span>Tareas terminadas</span><b>5 de 15</b></div>
- <div class="k"><span>Ahora estamos con</span><b style="font-size:17px;line-height:1.35">Usuarios y permisos · Turnos: reservar, seña, llegó, cobrar, anular</b></div>
- <div class="k"><span>Puesta en marcha estimada</span><b>24/11/2026</b></div>
+ <div class="k"><span>Avance general</span><b>15 %</b><div class="big"><i style="width:15%"></i></div></div>
+ <div class="k"><span>Tareas terminadas</span><b>6 de 32</b></div>
+ <div class="k"><span>Ahora estamos con</span><b style="font-size:17px;line-height:1.35">Usuarios y permisos · Reglas de turnos: reservar, seña, llegó, cobrar, anular, ausente</b></div>
+ <div class="k"><span>Turnos funcionando (estimado)</span><b>10/11/2026</b><span>Sistema completo: 28/11/2026</span></div>
 </div>
+
+<h2>Lo que necesitamos de ustedes</h2>
+<div class="card"><p>Con estas respuestas se cargan los datos reales y se puede abrir la página de turnos:</p><ul class="falta"><li>Duración y precio de cada servicio (pregunta 1) y cómo son los masajes (2).</li><li>Las otras 2 profesionales: nombre, servicios y horario. ¿Luciana atiende?</li><li>Cuántas cabinas hay y si masajes, depilación y Mío Up comparten la misma.</li><li>Los 20 minutos de preparación: ¿después de todos los servicios o solo de algunos?</li><li>Alias o CBU para las señas y a nombre de quién (el 3875394589 parece un teléfono).</li><li>Horario del centro: ¿de 8 a 21 con corte de 13 a 15, igual que Vanesa?</li><li>Seña a favor: ¿hasta cuándo la puede usar la clienta?</li><li>Packs de Mío Up: el de 8 sesiones sale más caro por sesión que el de 4. ¿Está bien el precio? ¿Vencen a los 30 días o a fin de mes?</li><li>Con cuánta anticipación mínima se puede pedir un turno (13).</li><li>Productos para el catálogo, con precio y foto (23).</li><li>Dirección, Instagram y redes para la página (28).</li></ul></div>
 
 <h2 class="g">Gráfico de tiempos (Gantt)</h2>
 <div class="card gcard">
  <div class="ley"><span class="plan"></span> Tiempo planificado &nbsp; <span style="display:inline-block;width:34px;height:12px;background:#2f7a4f;border-radius:4px;vertical-align:middle"></span> Tiempo real y avance &nbsp; <span class="chip" style="--c:#2f7a4f">Terminado</span><span class="chip" style="--c:#b8892b">En curso</span><span class="chip" style="--c:#3d6fa8">Esperando datos del centro</span><span class="chip" style="--c:#9aa39c">Por empezar</span><span class="chip" style="--c:#b23a3a">Atrasado</span></div>
- <div class="gantt"><svg viewBox="0 0 1070 539" width="100%" style="min-width:900px" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de Gantt del avance" font-family="Jost, Segoe UI, sans-serif">
-<line x1="300" y1="28" x2="300" y2="523" stroke="#d9d5cb" stroke-width="1"/>
-<text x="304" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 20/10</text>
-<text x="309.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">20</text>
-<text x="328.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">21</text>
-<text x="347.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">22</text>
-<text x="366.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">23</text>
-<text x="385.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">24</text>
-<rect x="395" y="52" width="19" height="471" fill="#f1ede4"/>
-<text x="404.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">25</text>
-<line x1="414" y1="28" x2="414" y2="523" stroke="#d9d5cb" stroke-width="1"/>
-<text x="418" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 26/10</text>
-<text x="423.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">26</text>
-<text x="442.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">27</text>
-<text x="461.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">28</text>
-<text x="480.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">29</text>
-<text x="499.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">30</text>
-<text x="518.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">31</text>
-<rect x="528" y="52" width="19" height="471" fill="#f1ede4"/>
-<text x="537.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">1</text>
-<line x1="547" y1="28" x2="547" y2="523" stroke="#d9d5cb" stroke-width="1"/>
-<text x="551" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 02/11</text>
-<text x="556.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">2</text>
-<text x="575.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">3</text>
-<text x="594.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">4</text>
-<text x="613.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">5</text>
-<text x="632.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">6</text>
-<text x="651.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">7</text>
-<rect x="661" y="52" width="19" height="471" fill="#f1ede4"/>
-<text x="670.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">8</text>
-<line x1="680" y1="28" x2="680" y2="523" stroke="#d9d5cb" stroke-width="1"/>
-<text x="684" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 09/11</text>
-<text x="689.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">9</text>
-<text x="708.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">10</text>
-<text x="727.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">11</text>
-<text x="746.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">12</text>
-<text x="765.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">13</text>
-<text x="784.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">14</text>
-<rect x="794" y="52" width="19" height="471" fill="#f1ede4"/>
-<text x="803.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">15</text>
-<line x1="813" y1="28" x2="813" y2="523" stroke="#d9d5cb" stroke-width="1"/>
-<text x="817" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 16/11</text>
-<text x="822.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">16</text>
-<text x="841.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">17</text>
-<text x="860.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">18</text>
-<text x="879.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">19</text>
-<text x="898.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">20</text>
-<text x="917.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">21</text>
-<rect x="927" y="52" width="19" height="471" fill="#f1ede4"/>
-<text x="936.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">22</text>
-<line x1="946" y1="28" x2="946" y2="523" stroke="#d9d5cb" stroke-width="1"/>
-<text x="950" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 23/11</text>
-<text x="955.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">23</text>
-<text x="974.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">24</text>
-<text x="993.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">25</text>
-<text x="1012.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">26</text>
-<text x="1031.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">27</text>
-<text x="1050.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">28</text>
-<rect x="0" y="58" width="1070" height="31" fill="#fbfaf6"/>
-<line x1="0" y1="58" x2="1070" y2="58" stroke="#cfc8b8" stroke-width="1"/>
+ <h3>Etapas 1 a 4 · hasta "Turnos funcionando"</h3>
+ <div class="gantt g1"><svg viewBox="0 0 1208 663" width="100%" style="min-width:900px" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de Gantt del avance" font-family="Jost, Segoe UI, sans-serif">
+<line x1="400" y1="28" x2="400" y2="647" stroke="#d9d5cb" stroke-width="1"/>
+<text x="404" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 20/10</text>
+<text x="409.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">20</text>
+<text x="428.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">21</text>
+<text x="447.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">22</text>
+<text x="466.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">23</text>
+<text x="485.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">24</text>
+<rect x="495" y="52" width="19" height="595" fill="#f1ede4"/>
+<text x="504.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">25</text>
+<line x1="514" y1="28" x2="514" y2="647" stroke="#d9d5cb" stroke-width="1"/>
+<text x="518" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 26/10</text>
+<text x="523.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">26</text>
+<text x="542.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">27</text>
+<text x="561.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">28</text>
+<text x="580.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">29</text>
+<text x="599.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">30</text>
+<text x="618.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">31</text>
+<rect x="628" y="52" width="19" height="595" fill="#f1ede4"/>
+<text x="637.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">1</text>
+<line x1="647" y1="28" x2="647" y2="647" stroke="#d9d5cb" stroke-width="1"/>
+<text x="651" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 02/11</text>
+<text x="656.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">2</text>
+<text x="675.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">3</text>
+<text x="694.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">4</text>
+<text x="713.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">5</text>
+<text x="732.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">6</text>
+<text x="751.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">7</text>
+<rect x="761" y="52" width="19" height="595" fill="#f1ede4"/>
+<text x="770.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">8</text>
+<line x1="780" y1="28" x2="780" y2="647" stroke="#d9d5cb" stroke-width="1"/>
+<text x="784" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 09/11</text>
+<text x="789.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">9</text>
+<text x="808.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">10</text>
+<text x="827.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">11</text>
+<text x="846.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">12</text>
+<text x="865.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">13</text>
+<text x="884.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">14</text>
+<rect x="894" y="52" width="19" height="595" fill="#f1ede4"/>
+<text x="903.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">15</text>
+<line x1="913" y1="28" x2="913" y2="647" stroke="#d9d5cb" stroke-width="1"/>
+<text x="917" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 16/11</text>
+<text x="922.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">16</text>
+<text x="941.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">17</text>
+<text x="960.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">18</text>
+<text x="979.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">19</text>
+<text x="998.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">20</text>
+<text x="1017.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">21</text>
+<rect x="1027" y="52" width="19" height="595" fill="#f1ede4"/>
+<text x="1036.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">22</text>
+<line x1="1046" y1="28" x2="1046" y2="647" stroke="#d9d5cb" stroke-width="1"/>
+<text x="1050" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 23/11</text>
+<text x="1055.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">23</text>
+<text x="1074.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">24</text>
+<text x="1093.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">25</text>
+<text x="1112.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">26</text>
+<text x="1131.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">27</text>
+<text x="1150.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">28</text>
+<rect x="1160" y="52" width="19" height="595" fill="#f1ede4"/>
+<text x="1169.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">29</text>
+<line x1="1179" y1="28" x2="1179" y2="647" stroke="#d9d5cb" stroke-width="1"/>
+<text x="1183" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 30/11</text>
+<text x="1188.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">30</text>
+<rect x="0" y="58" width="1208" height="31" fill="#fbfaf6"/>
+<line x1="0" y1="58" x2="1208" y2="58" stroke="#cfc8b8" stroke-width="1"/>
 <text x="8" y="79" font-size="13.5" fill="#13261c">Relevamiento y preguntas al centro</text>
-<rect x="300" y="65" width="95" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<rect x="300" y="68" width="95" height="11" rx="4" fill="#3d6fa8" opacity="0.28"/>
-<rect x="300" y="68" width="71.25" height="11" rx="4" fill="#3d6fa8"/>
-<text x="401" y="79" font-size="12.5" font-weight="700" fill="#3d6fa8">75 %</text>
-<text x="8" y="110" font-size="13.5" fill="#13261c">Diseño del circuito de turnos</text>
-<rect x="300" y="96" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<rect x="300" y="99" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
-<rect x="300" y="99" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
-<text x="325" y="110" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
-<rect x="0" y="120" width="1070" height="31" fill="#fbfaf6"/>
-<line x1="0" y1="120" x2="1070" y2="120" stroke="#cfc8b8" stroke-width="1"/>
-<text x="8" y="141" font-size="13.5" fill="#13261c">Base de datos: diseño, diagrama y pruebas</text>
-<rect x="300" y="127" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<rect x="300" y="130" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
-<rect x="300" y="130" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
-<text x="344" y="141" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
+<rect x="400" y="65" width="95" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<rect x="400" y="68" width="95" height="11" rx="4" fill="#3d6fa8" opacity="0.28"/>
+<rect x="400" y="68" width="71.25" height="11" rx="4" fill="#3d6fa8"/>
+<text x="501" y="79" font-size="12.5" font-weight="700" fill="#3d6fa8">75 %</text>
+<text x="8" y="110" font-size="13.5" fill="#13261c">Diseño del circuito de turnos (todos los casos)</text>
+<rect x="400" y="96" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<rect x="400" y="99" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
+<rect x="400" y="99" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
+<text x="425" y="110" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
+<rect x="0" y="120" width="1208" height="31" fill="#fbfaf6"/>
+<line x1="0" y1="120" x2="1208" y2="120" stroke="#cfc8b8" stroke-width="1"/>
+<text x="8" y="141" font-size="13.5" fill="#13261c">Base de datos completa: diseño, diagrama y pruebas</text>
+<rect x="400" y="127" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<rect x="400" y="130" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
+<rect x="400" y="130" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
+<text x="444" y="141" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
 <text x="8" y="172" font-size="13.5" fill="#13261c">Pantallas de muestra (turnos y recepción)</text>
-<rect x="300" y="158" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<rect x="300" y="161" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
-<rect x="300" y="161" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
-<text x="344" y="172" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
-<rect x="0" y="182" width="1070" height="31" fill="#fbfaf6"/>
-<text x="8" y="203" font-size="13.5" fill="#13261c">Propuesta y guía para las dueñas</text>
-<rect x="300" y="189" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<rect x="300" y="192" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
-<rect x="300" y="192" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
-<text x="344" y="203" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
-<line x1="0" y1="213" x2="1070" y2="213" stroke="#cfc8b8" stroke-width="1"/>
-<text x="8" y="234" font-size="13.5" fill="#13261c">Base de datos en la nube (Supabase)</text>
-<rect x="376" y="220" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<rect x="376" y="223" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
-<rect x="376" y="223" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
-<text x="401" y="234" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
-<rect x="0" y="244" width="1070" height="31" fill="#fbfaf6"/>
-<text x="8" y="265" font-size="13.5" fill="#13261c">Usuarios y permisos</text>
-<rect x="376" y="251" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<rect x="376" y="254" width="19" height="11" rx="4" fill="#b8892b" opacity="0.28"/>
-<rect x="376" y="254" width="9.5" height="11" rx="4" fill="#b8892b"/>
-<text x="401" y="265" font-size="12.5" font-weight="700" fill="#b8892b">50 %</text>
-<text x="8" y="296" font-size="13.5" fill="#13261c">Turnos: reservar, seña, llegó, cobrar, anular</text>
-<rect x="376" y="282" width="76" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<rect x="376" y="285" width="19" height="11" rx="4" fill="#b8892b" opacity="0.28"/>
-<rect x="376" y="285" width="3" height="11" rx="4" fill="#b8892b"/>
-<text x="458" y="296" font-size="12.5" font-weight="700" fill="#b8892b">10 %</text>
-<rect x="0" y="306" width="1070" height="31" fill="#fbfaf6"/>
-<text x="8" y="327" font-size="13.5" fill="#13261c">Carga de servicios, precios, profesionales y horarios</text>
-<rect x="433" y="313" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<text x="477" y="327" font-size="12.5" font-weight="700" fill="#3d6fa8">0 %</text>
-<line x1="0" y1="337" x2="1070" y2="337" stroke="#cfc8b8" stroke-width="1"/>
-<text x="8" y="358" font-size="13.5" fill="#13261c">Página pública de turnos (link para clientas)</text>
-<rect x="452" y="344" width="76" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<text x="534" y="358" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
-<rect x="0" y="368" width="1070" height="31" fill="#fbfaf6"/>
-<text x="8" y="389" font-size="13.5" fill="#13261c">Gestión: agenda, seña, cobro y caja</text>
-<rect x="471" y="375" width="152" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<text x="629" y="389" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
-<text x="8" y="420" font-size="13.5" fill="#13261c">Promociones, banners y flyers</text>
-<rect x="566" y="406" width="76" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<text x="648" y="420" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
-<rect x="0" y="430" width="1070" height="31" fill="#fbfaf6"/>
-<line x1="0" y1="430" x2="1070" y2="430" stroke="#cfc8b8" stroke-width="1"/>
-<text x="8" y="451" font-size="13.5" fill="#13261c">Pruebas con las dueñas</text>
-<rect x="623" y="437" width="152" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<text x="781" y="451" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
-<text x="8" y="482" font-size="13.5" fill="#13261c">Segunda tanda: packs Mío Up, comisiones, catálogo</text>
-<rect x="699" y="468" width="228" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<text x="933" y="482" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
-<rect x="0" y="492" width="1070" height="31" fill="#fbfaf6"/>
-<text x="8" y="513" font-size="13.5" fill="#13261c">Puesta en marcha</text>
-<rect x="965" y="499" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
-<text x="990" y="513" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
-<line x1="385.5" y1="52" x2="385.5" y2="527" stroke="#b23a3a" stroke-width="2"/>
-<rect x="355.5" y="525" width="60" height="14" rx="3" fill="#b23a3a"/>
-<text x="385.5" y="535.5" font-size="10.5" fill="#fff" text-anchor="middle" font-weight="700">HOY 24/10</text>
+<rect x="400" y="158" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<rect x="400" y="161" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
+<rect x="400" y="161" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
+<text x="444" y="172" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
+<rect x="0" y="182" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="203" font-size="13.5" fill="#13261c">Propuesta, guía y dudas para las dueñas</text>
+<rect x="400" y="189" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<rect x="400" y="192" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
+<rect x="400" y="192" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
+<text x="444" y="203" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
+<text x="8" y="234" font-size="13.5" fill="#13261c">Informe de avance (este documento)</text>
+<rect x="476" y="220" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<rect x="476" y="223" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
+<rect x="476" y="223" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
+<text x="501" y="234" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
+<rect x="0" y="244" width="1208" height="31" fill="#fbfaf6"/>
+<line x1="0" y1="244" x2="1208" y2="244" stroke="#cfc8b8" stroke-width="1"/>
+<text x="8" y="265" font-size="13.5" fill="#13261c">Base de datos en la nube (Supabase)</text>
+<rect x="476" y="251" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<rect x="476" y="254" width="19" height="11" rx="4" fill="#2f7a4f" opacity="0.28"/>
+<rect x="476" y="254" width="19.0" height="11" rx="4" fill="#2f7a4f"/>
+<text x="501" y="265" font-size="12.5" font-weight="700" fill="#2f7a4f">✓</text>
+<text x="8" y="296" font-size="13.5" fill="#13261c">Usuarios y permisos</text>
+<rect x="476" y="282" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<rect x="476" y="285" width="19" height="11" rx="4" fill="#b8892b" opacity="0.28"/>
+<rect x="476" y="285" width="9.5" height="11" rx="4" fill="#b8892b"/>
+<text x="520" y="296" font-size="12.5" font-weight="700" fill="#b8892b">50 %</text>
+<rect x="0" y="306" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="327" font-size="13.5" fill="#13261c">Reglas de turnos: reservar, seña, llegó, cobrar, anular, ausente</text>
+<rect x="476" y="313" width="76" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<rect x="476" y="316" width="19" height="11" rx="4" fill="#b8892b" opacity="0.28"/>
+<rect x="476" y="316" width="3" height="11" rx="4" fill="#b8892b"/>
+<text x="558" y="327" font-size="12.5" font-weight="700" fill="#b8892b">10 %</text>
+<text x="8" y="358" font-size="13.5" fill="#13261c">Carga de servicios, precios, profesionales, horarios y cabinas</text>
+<rect x="533" y="344" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="577" y="358" font-size="12.5" font-weight="700" fill="#3d6fa8">0 %</text>
+<rect x="0" y="368" width="1208" height="31" fill="#fbfaf6"/>
+<line x1="0" y1="368" x2="1208" y2="368" stroke="#cfc8b8" stroke-width="1"/>
+<text x="8" y="389" font-size="13.5" fill="#13261c">Página pública de turnos (link para clientas)</text>
+<rect x="552" y="375" width="76" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="634" y="389" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<text x="8" y="420" font-size="13.5" fill="#13261c">Gestión: agenda del día y la semana</text>
+<rect x="571" y="406" width="114" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="691" y="420" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<rect x="0" y="430" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="451" font-size="13.5" fill="#13261c">Bloqueos, reprogramar y cambios en el turno</text>
+<rect x="609" y="437" width="95" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="710" y="451" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<text x="8" y="482" font-size="13.5" fill="#13261c">Caja diaria y arqueo</text>
+<rect x="666" y="468" width="57" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="729" y="482" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<rect x="0" y="492" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="513" font-size="13.5" fill="#13261c">Clientas: ficha, historial y saldo a favor</text>
+<rect x="666" y="499" width="57" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="729" y="513" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<text x="8" y="544" font-size="13.5" fill="#13261c">Configuración (solo superusuario)</text>
+<rect x="609" y="530" width="95" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="710" y="544" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<rect x="0" y="554" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="575" font-size="13.5" fill="#13261c">Mensajes de WhatsApp armados y recordatorios</text>
+<rect x="685" y="561" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="729" y="575" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<text x="8" y="606" font-size="13.5" fill="#13261c">Pruebas de turnos con las dueñas</text>
+<rect x="704" y="592" width="57" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="767" y="606" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<rect x="0" y="616" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="637" font-size="13.5" fill="#13261c">HITO · Turnos funcionando</text>
+<rect x="799" y="623" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="824" y="637" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<line x1="485.5" y1="52" x2="485.5" y2="651" stroke="#b23a3a" stroke-width="2"/>
+<rect x="455.5" y="649" width="60" height="14" rx="3" fill="#b23a3a"/>
+<text x="485.5" y="659.5" font-size="10.5" fill="#fff" text-anchor="middle" font-weight="700">HOY 24/10</text>
+</svg></div>
+ <h3 class="salto">Etapas 5 y 6 · gestión completa</h3>
+ <div class="gantt g2"><svg viewBox="0 0 1208 477" width="100%" style="min-width:900px" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de Gantt del avance" font-family="Jost, Segoe UI, sans-serif">
+<line x1="400" y1="28" x2="400" y2="461" stroke="#d9d5cb" stroke-width="1"/>
+<text x="404" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 20/10</text>
+<text x="409.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">20</text>
+<text x="428.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">21</text>
+<text x="447.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">22</text>
+<text x="466.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">23</text>
+<text x="485.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">24</text>
+<rect x="495" y="52" width="19" height="409" fill="#f1ede4"/>
+<text x="504.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">25</text>
+<line x1="514" y1="28" x2="514" y2="461" stroke="#d9d5cb" stroke-width="1"/>
+<text x="518" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 26/10</text>
+<text x="523.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">26</text>
+<text x="542.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">27</text>
+<text x="561.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">28</text>
+<text x="580.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">29</text>
+<text x="599.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">30</text>
+<text x="618.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">31</text>
+<rect x="628" y="52" width="19" height="409" fill="#f1ede4"/>
+<text x="637.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">1</text>
+<line x1="647" y1="28" x2="647" y2="461" stroke="#d9d5cb" stroke-width="1"/>
+<text x="651" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 02/11</text>
+<text x="656.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">2</text>
+<text x="675.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">3</text>
+<text x="694.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">4</text>
+<text x="713.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">5</text>
+<text x="732.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">6</text>
+<text x="751.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">7</text>
+<rect x="761" y="52" width="19" height="409" fill="#f1ede4"/>
+<text x="770.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">8</text>
+<line x1="780" y1="28" x2="780" y2="461" stroke="#d9d5cb" stroke-width="1"/>
+<text x="784" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 09/11</text>
+<text x="789.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">9</text>
+<text x="808.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">10</text>
+<text x="827.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">11</text>
+<text x="846.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">12</text>
+<text x="865.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">13</text>
+<text x="884.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">14</text>
+<rect x="894" y="52" width="19" height="409" fill="#f1ede4"/>
+<text x="903.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">15</text>
+<line x1="913" y1="28" x2="913" y2="461" stroke="#d9d5cb" stroke-width="1"/>
+<text x="917" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 16/11</text>
+<text x="922.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">16</text>
+<text x="941.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">17</text>
+<text x="960.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">18</text>
+<text x="979.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">19</text>
+<text x="998.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">20</text>
+<text x="1017.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">21</text>
+<rect x="1027" y="52" width="19" height="409" fill="#f1ede4"/>
+<text x="1036.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">22</text>
+<line x1="1046" y1="28" x2="1046" y2="461" stroke="#d9d5cb" stroke-width="1"/>
+<text x="1050" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 23/11</text>
+<text x="1055.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">23</text>
+<text x="1074.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">24</text>
+<text x="1093.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">25</text>
+<text x="1112.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">26</text>
+<text x="1131.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">27</text>
+<text x="1150.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">28</text>
+<rect x="1160" y="52" width="19" height="409" fill="#f1ede4"/>
+<text x="1169.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">29</text>
+<line x1="1179" y1="28" x2="1179" y2="461" stroke="#d9d5cb" stroke-width="1"/>
+<text x="1183" y="24" font-size="13" fill="#5f6b63" font-weight="600">Sem. 30/11</text>
+<text x="1188.5" y="46" font-size="10" fill="#8a948c" text-anchor="middle">30</text>
+<rect x="0" y="58" width="1208" height="31" fill="#fbfaf6"/>
+<line x1="0" y1="58" x2="1208" y2="58" stroke="#cfc8b8" stroke-width="1"/>
+<text x="8" y="79" font-size="13.5" fill="#13261c">Promociones, banners y flyers</text>
+<rect x="723" y="65" width="114" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="843" y="79" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<text x="8" y="110" font-size="13.5" fill="#13261c">Packs de Mío Up</text>
+<rect x="799" y="96" width="76" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="881" y="110" font-size="12.5" font-weight="700" fill="#3d6fa8">0 %</text>
+<rect x="0" y="120" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="141" font-size="13.5" fill="#13261c">Liquidación de comisiones</text>
+<rect x="837" y="127" width="57" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="900" y="141" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<text x="8" y="172" font-size="13.5" fill="#13261c">Subir el comprobante de seña desde la web</text>
+<rect x="856" y="158" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="900" y="172" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<rect x="0" y="182" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="203" font-size="13.5" fill="#13261c">Compras, proveedores y pagos a proveedores</text>
+<rect x="913" y="189" width="76" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="995" y="203" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<text x="8" y="234" font-size="13.5" fill="#13261c">Gastos del centro</text>
+<rect x="932" y="220" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="976" y="234" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<rect x="0" y="244" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="265" font-size="13.5" fill="#13261c">Stock de insumos</text>
+<rect x="951" y="251" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="995" y="265" font-size="12.5" font-weight="700" fill="#3d6fa8">0 %</text>
+<text x="8" y="296" font-size="13.5" fill="#13261c">Catálogo de productos con carrito</text>
+<rect x="932" y="282" width="95" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="1033" y="296" font-size="12.5" font-weight="700" fill="#3d6fa8">0 %</text>
+<rect x="0" y="306" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="327" font-size="13.5" fill="#13261c">Ficha de salud, consentimiento y fotos antes/después</text>
+<rect x="989" y="313" width="38" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="1033" y="327" font-size="12.5" font-weight="700" fill="#3d6fa8">0 %</text>
+<text x="8" y="358" font-size="13.5" fill="#13261c">Reportes y tablero</text>
+<rect x="970" y="344" width="114" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="1090" y="358" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<rect x="0" y="368" width="1208" height="31" fill="#fbfaf6"/>
+<line x1="0" y1="368" x2="1208" y2="368" stroke="#cfc8b8" stroke-width="1"/>
+<text x="8" y="389" font-size="13.5" fill="#13261c">Copias de seguridad automáticas</text>
+<rect x="1065" y="375" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="1090" y="389" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<text x="8" y="420" font-size="13.5" fill="#13261c">Guía de uso y capacitación</text>
+<rect x="1065" y="406" width="57" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="1128" y="420" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<rect x="0" y="430" width="1208" height="31" fill="#fbfaf6"/>
+<text x="8" y="451" font-size="13.5" fill="#13261c">HITO · Sistema completo</text>
+<rect x="1141" y="437" width="19" height="17" rx="5" fill="none" stroke="#a8834f" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="1166" y="451" font-size="12.5" font-weight="700" fill="#9aa39c">0 %</text>
+<line x1="485.5" y1="52" x2="485.5" y2="465" stroke="#b23a3a" stroke-width="2"/>
+<rect x="455.5" y="463" width="60" height="14" rx="3" fill="#b23a3a"/>
+<text x="485.5" y="473.5" font-size="10.5" fill="#fff" text-anchor="middle" font-weight="700">HOY 24/10</text>
 </svg></div>
  <p class="nota">Cada fila muestra el tiempo planificado (contorno punteado) y el real (barra de color, lo pintado fuerte es el avance). La línea roja es hoy. Las fechas planificadas son estimadas y se ajustan cuando llegan los datos del centro.</p>
 </div>
 
 <h2 class="salto">Detalle de cada tarea</h2>
-<div class="card tablewrap"><table><thead><tr><th>Etapa</th><th>Tarea</th><th>Planificado</th><th>Real</th><th>Estado</th><th>Avance</th></tr></thead><tbody><tr><td class="et">1. Relevamiento</td><td><b>Relevamiento y preguntas al centro</b><div class="det">Contestó Vanesa el 24/10. Faltan 10 respuestas y 8 repreguntas (ver abajo).</div></td><td class="n">20/10 → 24/10</td><td class="n">20/10 → sigue</td><td><span class="chip" style="--c:#3d6fa8">Esperando datos del centro</span></td><td class="n"><div class="barra"><i style="width:75%;background:#3d6fa8"></i></div>75 %</td></tr><tr><td class="et">1. Relevamiento</td><td><b>Diseño del circuito de turnos</b><div class="det">Seña, plazo, anulación, tolerancia, llegada, cobro.</div></td><td class="n">20/10 → 20/10</td><td class="n">20/10 → 20/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">2. Diseño</td><td><b>Base de datos: diseño, diagrama y pruebas</b><div class="det">90 tablas. 146 pruebas automáticas aprobadas.</div></td><td class="n">20/10 → 21/10</td><td class="n">20/10 → 20/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">2. Diseño</td><td><b>Pantallas de muestra (turnos y recepción)</b><div class="det">Publicadas en la web para que las vean. Datos de ejemplo.</div></td><td class="n">20/10 → 21/10</td><td class="n">20/10 → 20/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">2. Diseño</td><td><b>Propuesta y guía para las dueñas</b><div class="det">Con las 28 dudas para responder por WhatsApp.</div></td><td class="n">20/10 → 21/10</td><td class="n">20/10 → 20/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">3. Sistema real</td><td><b>Base de datos en la nube (Supabase)</b><div class="det">Subida y verificada igual a la probada.</div></td><td class="n">24/10 → 24/10</td><td class="n">24/10 → 24/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">3. Sistema real</td><td><b>Usuarios y permisos</b><div class="det">Superusuario y dos administradoras. Escrito, en prueba.</div></td><td class="n">24/10 → 24/10</td><td class="n">24/10 → sigue</td><td><span class="chip" style="--c:#b8892b">En curso</span></td><td class="n"><div class="barra"><i style="width:50%;background:#b8892b"></i></div>50 %</td></tr><tr><td class="et">3. Sistema real</td><td><b>Turnos: reservar, seña, llegó, cobrar, anular</b><div class="det">Reglas de Vanesa: seña 30 %, 15 min, 24 h, 10 min de tolerancia.</div></td><td class="n">24/10 → 27/10</td><td class="n">24/10 → sigue</td><td><span class="chip" style="--c:#b8892b">En curso</span></td><td class="n"><div class="barra"><i style="width:10%;background:#b8892b"></i></div>10 %</td></tr><tr><td class="et">3. Sistema real</td><td><b>Carga de servicios, precios, profesionales y horarios</b><div class="det">Necesita duración y precio de cada servicio, y las otras 2 profesionales.</div></td><td class="n">27/10 → 28/10</td><td class="n">— → —</td><td><span class="chip" style="--c:#3d6fa8">Esperando datos del centro</span></td><td class="n"><div class="barra"><i style="width:0%;background:#3d6fa8"></i></div>0 %</td></tr><tr><td class="et">4. Pantallas</td><td><b>Página pública de turnos (link para clientas)</b><div class="det">La clienta elige servicio, profesional y horario.</div></td><td class="n">28/10 → 31/10</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Pantallas</td><td><b>Gestión: agenda, seña, cobro y caja</b><div class="det">Con botón para ver la página pública.</div></td><td class="n">29/10 → 05/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Pantallas</td><td><b>Promociones, banners y flyers</b><div class="det">Ellas los arman y aparecen solos en la página.</div></td><td class="n">03/11 → 06/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">5. Uso real</td><td><b>Pruebas con las dueñas</b><div class="det">Lo usan con turnos reales y ajustamos.</div></td><td class="n">06/11 → 13/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">5. Uso real</td><td><b>Segunda tanda: packs Mío Up, comisiones, catálogo</b><div class="det">Packs mensuales, 30 % de manicuría, venta de productos.</div></td><td class="n">10/11 → 21/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">5. Uso real</td><td><b>Puesta en marcha</b><div class="det">El sistema queda funcionando.</div></td><td class="n">24/11 → 24/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr></tbody></table></div>
+<div class="card tablewrap"><table><thead><tr><th>Etapa</th><th>Tarea</th><th>Planificado</th><th>Real</th><th>Estado</th><th>Avance</th></tr></thead><tbody><tr><td class="et">1. Relevamiento</td><td><b>Relevamiento y preguntas al centro</b><div class="det">Contestó Vanesa el 24/10. Faltan respuestas (ver abajo).</div></td><td class="n">20/10 → 24/10</td><td class="n">20/10 → sigue</td><td><span class="chip" style="--c:#3d6fa8">Esperando datos del centro</span></td><td class="n"><div class="barra"><i style="width:75%;background:#3d6fa8"></i></div>75 %</td></tr><tr><td class="et">1. Relevamiento</td><td><b>Diseño del circuito de turnos (todos los casos)</b><div class="det">Seña, plazo, anulación, tolerancia, llegada, cobro, reprogramar, falta de profesional.</div></td><td class="n">20/10 → 20/10</td><td class="n">20/10 → 20/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">2. Diseño</td><td><b>Base de datos completa: diseño, diagrama y pruebas</b><div class="det">Turnos, clientas, caja, cobros, compras, proveedores, pagos, gastos, stock, packs, comisiones, ficha. 146 pruebas aprobadas.</div></td><td class="n">20/10 → 21/10</td><td class="n">20/10 → 20/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">2. Diseño</td><td><b>Pantallas de muestra (turnos y recepción)</b><div class="det">Publicadas en la web. Datos de ejemplo.</div></td><td class="n">20/10 → 21/10</td><td class="n">20/10 → 20/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">2. Diseño</td><td><b>Propuesta, guía y dudas para las dueñas</b><div class="det">28 dudas para responder por WhatsApp.</div></td><td class="n">20/10 → 21/10</td><td class="n">20/10 → 20/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">2. Diseño</td><td><b>Informe de avance (este documento)</b><div class="det">Se actualiza en cada avance.</div></td><td class="n">24/10 → 24/10</td><td class="n">24/10 → 24/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">3. Sistema real</td><td><b>Base de datos en la nube (Supabase)</b><div class="det">Subida y verificada igual a la probada.</div></td><td class="n">24/10 → 24/10</td><td class="n">24/10 → 24/10</td><td><span class="chip" style="--c:#2f7a4f">Terminado</span></td><td class="n"><div class="barra"><i style="width:100%;background:#2f7a4f"></i></div>100 %</td></tr><tr><td class="et">3. Sistema real</td><td><b>Usuarios y permisos</b><div class="det">Superusuario y dos administradoras (todo menos configuración). Escrito, en prueba.</div></td><td class="n">24/10 → 25/10</td><td class="n">24/10 → sigue</td><td><span class="chip" style="--c:#b8892b">En curso</span></td><td class="n"><div class="barra"><i style="width:50%;background:#b8892b"></i></div>50 %</td></tr><tr><td class="et">3. Sistema real</td><td><b>Reglas de turnos: reservar, seña, llegó, cobrar, anular, ausente</b><div class="det">Seña 30 %, 15 min para pagar, 24 h para anular, 10 min de tolerancia, seña a favor.</div></td><td class="n">24/10 → 27/10</td><td class="n">24/10 → sigue</td><td><span class="chip" style="--c:#b8892b">En curso</span></td><td class="n"><div class="barra"><i style="width:10%;background:#b8892b"></i></div>10 %</td></tr><tr><td class="et">3. Sistema real</td><td><b>Carga de servicios, precios, profesionales, horarios y cabinas</b><div class="det">Falta duración y precio de cada servicio, las otras 2 profesionales y cantidad de cabinas.</div></td><td class="n">27/10 → 28/10</td><td class="n">— → —</td><td><span class="chip" style="--c:#3d6fa8">Esperando datos del centro</span></td><td class="n"><div class="barra"><i style="width:0%;background:#3d6fa8"></i></div>0 %</td></tr><tr><td class="et">4. Turnos funcionando</td><td><b>Página pública de turnos (link para clientas)</b><div class="det">Elige servicio, zonas, profesional y horario; ve su turno y lo puede anular.</div></td><td class="n">28/10 → 31/10</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Turnos funcionando</td><td><b>Gestión: agenda del día y la semana</b><div class="det">Seña recibida, llegó, ausente, cobro, turnos por teléfono. Botón para ver la página pública.</div></td><td class="n">29/10 → 03/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Turnos funcionando</td><td><b>Bloqueos, reprogramar y cambios en el turno</b><div class="det">Feriados, francos, cabina fuera de servicio, agregar un servicio, falta de profesional.</div></td><td class="n">31/10 → 04/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Turnos funcionando</td><td><b>Caja diaria y arqueo</b><div class="det">Apertura, cobros por medio (efectivo y transferencia), cierre y diferencias.</div></td><td class="n">03/11 → 05/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Turnos funcionando</td><td><b>Clientas: ficha, historial y saldo a favor</b><div class="det">Turnos, ausencias, señas perdidas y señas a favor de cada clienta.</div></td><td class="n">03/11 → 05/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Turnos funcionando</td><td><b>Configuración (solo superusuario)</b><div class="det">Datos del centro, reglas de turnos, medios de pago, cuentas y usuarios.</div></td><td class="n">31/10 → 04/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Turnos funcionando</td><td><b>Mensajes de WhatsApp armados y recordatorios</b><div class="det">Confirmación, aviso de seña, recordatorio del día anterior. Se envían a mano.</div></td><td class="n">04/11 → 05/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Turnos funcionando</td><td><b>Pruebas de turnos con las dueñas</b><div class="det">Turnos reales con acompañamiento; se ajusta lo que haga falta.</div></td><td class="n">05/11 → 07/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">4. Turnos funcionando</td><td><b>HITO · Turnos funcionando</b><div class="det">Las clientas ya piden turno por la página.</div></td><td class="n">10/11 → 10/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Promociones, banners y flyers</b><div class="det">Ellas los arman, ponen fechas y aparecen solos en la página.</div></td><td class="n">06/11 → 11/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Packs de Mío Up</b><div class="det">Venta del pack y descuento de sesiones. Falta confirmar precios y vencimiento.</div></td><td class="n">10/11 → 13/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#3d6fa8">Esperando datos del centro</span></td><td class="n"><div class="barra"><i style="width:0%;background:#3d6fa8"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Liquidación de comisiones</b><div class="det">30 % en manicuría; liquidación por período y pago como gasto.</div></td><td class="n">12/11 → 14/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Subir el comprobante de seña desde la web</b><div class="det">La clienta sube la foto de la transferencia; ellas la aprueban.</div></td><td class="n">13/11 → 14/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Compras, proveedores y pagos a proveedores</b><div class="det">Facturas de compra, cuenta corriente con cada proveedor, pagos.</div></td><td class="n">16/11 → 19/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Gastos del centro</b><div class="det">Alquiler, servicios, insumos, sueldos, por tipo y concepto.</div></td><td class="n">17/11 → 18/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Stock de insumos</b><div class="det">Descuento de insumos por servicio. Falta saber si lo quieren (pregunta 24).</div></td><td class="n">18/11 → 19/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#3d6fa8">Esperando datos del centro</span></td><td class="n"><div class="barra"><i style="width:0%;background:#3d6fa8"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Catálogo de productos con carrito</b><div class="det">Como Pirotecnia Boom. Falta la lista de productos con precio y foto (23).</div></td><td class="n">17/11 → 21/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#3d6fa8">Esperando datos del centro</span></td><td class="n"><div class="barra"><i style="width:0%;background:#3d6fa8"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Ficha de salud, consentimiento y fotos antes/después</b><div class="det">Falta saber qué datos quieren en la ficha (25).</div></td><td class="n">20/11 → 21/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#3d6fa8">Esperando datos del centro</span></td><td class="n"><div class="barra"><i style="width:0%;background:#3d6fa8"></i></div>0 %</td></tr><tr><td class="et">5. Gestión completa</td><td><b>Reportes y tablero</b><div class="det">Ventas, servicios más pedidos, ocupación, ausencias, señas perdidas, resultado del mes.</div></td><td class="n">19/11 → 24/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">6. Cierre</td><td><b>Copias de seguridad automáticas</b><div class="det">Respaldo diario de la base.</div></td><td class="n">24/11 → 24/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">6. Cierre</td><td><b>Guía de uso y capacitación</b><div class="det">Guía con imágenes y práctica con las dueñas.</div></td><td class="n">24/11 → 26/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr><tr><td class="et">6. Cierre</td><td><b>HITO · Sistema completo</b><div class="det">Todo el sistema de gestión funcionando.</div></td><td class="n">28/11 → 28/11</td><td class="n">— → —</td><td><span class="chip" style="--c:#9aa39c">Por empezar</span></td><td class="n"><div class="barra"><i style="width:0%;background:#9aa39c"></i></div>0 %</td></tr></tbody></table></div>
 
 <h2 class="salto">Paso a paso, desde el inicio</h2>
-<div class="card"><ol class="reg"><li><span class="f">20/10</span><div><b>Arranque</b><p>Se tomó como base el sistema de Pirotecnia Boom (ya probado en uso real) y se definió que lo principal es la página de turnos.</p></div></li><li><span class="f">20/10</span><div><b>Circuito de turnos</b><p>Se definió cómo se pide un turno, la seña por transferencia, el plazo para pagarla, la anulación, la tolerancia de 10 minutos, el &quot;Llegó&quot; y que el turno termina al cobrar.</p></div></li><li><span class="f">20/10</span><div><b>Base de datos</b><p>Se diseñó la base completa (turnos, servicios, profesionales, cabinas, packs, comisiones, ficha de la clienta) y se probó con 146 pruebas automáticas.</p></div></li><li><span class="f">20/10</span><div><b>Pantallas de muestra</b><p>Se armaron la página de turnos para clientas y la agenda de recepción, con los colores y el logo de Abundia, para que las vean.</p></div></li><li><span class="f">20/10</span><div><b>Propuesta y dudas</b><p>Se armó la propuesta con las 28 dudas, para contestar desde el celular y mandar por WhatsApp.</p></div></li><li><span class="f">24/10</span><div><b>Respuestas del centro</b><p>Vanesa contestó: seña 30 %, 15 minutos para pagar, anular hasta 24 h antes, servicios simultáneos, la clienta elige profesional, 30 % de comisión en manicuría, packs de Mío Up.</p></div></li><li><span class="f">24/10</span><div><b>Base en la nube</b><p>Se contrató el plan Pro de Supabase y se subió la base. Se comparó contra la versión probada: es igual.</p></div></li><li><span class="f">24/10</span><div><b>Usuarios</b><p>Se definieron los usuarios: un superusuario (soporte) y Vanesa y Luciana como administradoras, con todo menos la configuración.</p></div></li><li><span class="f">24/10</span><div><b>Turnos (en curso)</b><p>Se están programando las reglas de turnos con las respuestas de Vanesa. Se suben recién cuando estén probadas.</p></div></li></ol></div>
+<div class="card"><ol class="reg"><li><span class="f">20/10</span><div><b>Arranque</b><p>Se tomó como base el sistema de Pirotecnia Boom (ya probado en uso real) y se definió que lo principal es la página de turnos.</p></div></li><li><span class="f">20/10</span><div><b>Circuito de turnos</b><p>Se definió cómo se pide un turno, la seña por transferencia, el plazo para pagarla, la anulación, la tolerancia de 10 minutos, el &quot;Llegó&quot; y que el turno termina al cobrar.</p></div></li><li><span class="f">20/10</span><div><b>Base de datos</b><p>Se diseñó la base completa (turnos, servicios, profesionales, cabinas, packs, comisiones, ficha de la clienta) y se probó con 146 pruebas automáticas.</p></div></li><li><span class="f">20/10</span><div><b>Pantallas de muestra</b><p>Se armaron la página de turnos para clientas y la agenda de recepción, con los colores y el logo de Abundia, para que las vean.</p></div></li><li><span class="f">20/10</span><div><b>Propuesta y dudas</b><p>Se armó la propuesta con las 28 dudas, para contestar desde el celular y mandar por WhatsApp.</p></div></li><li><span class="f">24/10</span><div><b>Respuestas del centro</b><p>Vanesa contestó: seña 30 %, 15 minutos para pagar, anular hasta 24 h antes, servicios simultáneos, la clienta elige profesional, 30 % de comisión en manicuría, packs de Mío Up.</p></div></li><li><span class="f">24/10</span><div><b>Base en la nube</b><p>Se contrató el plan Pro de Supabase y se subió la base. Se comparó contra la versión probada: es igual.</p></div></li><li><span class="f">24/10</span><div><b>Usuarios</b><p>Se definieron los usuarios: un superusuario (soporte) y Vanesa y Luciana como administradoras, con todo menos la configuración.</p></div></li><li><span class="f">24/10</span><div><b>Informe de avance</b><p>Se armó este informe con el Gantt de todo lo relevado.</p></div></li><li><span class="f">24/10</span><div><b>Turnos (en curso)</b><p>Se están programando las reglas de turnos con las respuestas de Vanesa. Se suben recién cuando estén probadas.</p></div></li></ol></div>
 
-<h2>Lo que necesitamos de ustedes</h2>
-<div class="card"><p>Con estas respuestas se cargan los datos reales y se puede abrir la página de turnos:</p><ul class="falta"><li>Duración y precio de cada servicio (pregunta 1) y cómo son los masajes (2).</li><li>Las otras 2 profesionales: nombre, servicios y horario. ¿Luciana atiende?</li><li>Cuántas cabinas hay y si masajes, depilación y Mío Up comparten la misma.</li><li>Los 20 minutos de preparación: ¿después de todos los servicios o solo de algunos?</li><li>Alias o CBU para las señas y a nombre de quién (el 3875394589 parece un teléfono).</li><li>Horario del centro: ¿de 8 a 21 con corte de 13 a 15, igual que Vanesa?</li><li>Seña a favor: ¿hasta cuándo la puede usar la clienta?</li><li>Packs de Mío Up: el de 8 sesiones sale más caro por sesión que el de 4. ¿Está bien el precio? ¿Vencen a los 30 días o a fin de mes?</li><li>Con cuánta anticipación mínima se puede pedir un turno (13).</li><li>Productos para el catálogo, con precio y foto (23).</li><li>Dirección, Instagram y redes para la página (28).</li></ul></div>
+
+
+<h2>Fuera de alcance por ahora</h2>
+<div class="card"><ul><li>Factura electrónica: Abundia no factura; los comprobantes del sistema dicen "no válido como factura". Se puede sumar más adelante.</li>
+<li>Envío automático de WhatsApp: el centro prefiere hacerlo a mano (la API cobra por mensaje). El sistema arma el mensaje y abre WhatsApp.</li>
+<li>Usuarios para recepción y profesionales: hoy usan el sistema solo las dueñas. La base ya lo permite si después lo quieren.</li></ul></div>
 
 <h2>Para ver</h2>
 <div class="card"><ul><li><a href="https://ema-data-analytics.github.io/abundia/">Propuesta y dudas</a> <span class="u">https://ema-data-analytics.github.io/abundia/</span></li><li><a href="https://ema-data-analytics.github.io/abundia/turnos.html">Página de turnos (muestra)</a> <span class="u">https://ema-data-analytics.github.io/abundia/turnos.html</span></li><li><a href="https://ema-data-analytics.github.io/abundia/recepcion.html">Agenda de recepción (muestra)</a> <span class="u">https://ema-data-analytics.github.io/abundia/recepcion.html</span></li><li><a href="https://ema-data-analytics.github.io/abundia/guia.html">Guía de uso</a> <span class="u">https://ema-data-analytics.github.io/abundia/guia.html</span></li></ul><p class="nota">Las pantallas de muestra usan datos de ejemplo; todavía no están conectadas al sistema real.</p></div>
