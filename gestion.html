@@ -119,7 +119,9 @@ const fF = (d, o) => new Intl.DateTimeFormat('es-AR', Object.assign({ timeZone: 
 const fHora = (d) => fF(d, { hour: '2-digit', minute: '2-digit', hour12: false });
 const fDia = (d) => fF(d, { weekday: 'long', day: 'numeric', month: 'long' });
 const fCorta = (d) => fF(d, { day: '2-digit', month: '2-digit' }) + ' ' + fHora(d);
-const hoyISO = () => fF(new Date(), { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+const fFecha = (iso) => { const x = String(iso || '').slice(0, 10).split('-'); return x.length === 3 ? x[2] + '/' + x[1] + '/' + x[0] : esc(iso); };
+const diaISO = (d) => fF(d, { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+const hoyISO = () => diaISO(new Date());
 const sumar = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const EST = { pendiente_sena: ['Esperando seña', ''], sena_a_verificar: ['Seña a verificar', ''], confirmado: ['Confirmado', 'info'], en_curso: ['Llegó', 'ok'],
@@ -228,6 +230,12 @@ function accionesTurno(t) {
   b.push('<button class="btn sec chico" data-a="nota">Nota</button>');
   return '<div class="acciones">' + b.join('') + '</div>';
 }
+// saldo a favor de la clienta sin contar la seña ya pagada de este mismo turno
+function aFavorExtra(t) {
+  if (['terminado'].includes(t.estado)) return 0;
+  const propia = t.sena_pagada && !t.sena_perdida ? (t.sena_importe || 0) : 0;
+  return Math.max(0, Math.round(((t.a_favor_clienta || 0) - propia) * 100) / 100);
+}
 function turnoHtml(t, conFecha) {
   const e = EST[t.estado] || [t.estado, ''];
   let sena = '';
@@ -236,7 +244,7 @@ function turnoHtml(t, conFecha) {
   return '<article class="card turno ' + t.estado + '" data-t="' + t.id + '"><div class="fila entre"><span class="hora">' + (conFecha ? fCorta(t.inicio) : fHora(t.inicio)) + '</span><span class="chip ' + e[1] + '">' + e[0] + '</span></div>' +
     '<div><b>' + esc(t.cliente.nombre) + '</b> ' + (t.cliente.celular ? '<a href="' + wa(t.cliente.celular, 'Hola ' + t.cliente.nombre.split(' ')[0] + '!') + '" target="_blank" rel="noopener">' + esc(t.cliente.celular.replace('+549', '')) + '</a>' : '') +
     ' <span class="muted">· ' + esc(t.numero) + (t.origen === 'web' ? ' · web' : '') + '</span></div>' + itemsHtml(t) +
-    '<div class="fila entre"><span>Total <b>' + plata(t.total) + '</b>' + (sena ? ' · <span class="muted">' + sena + '</span>' : '') + (t.a_favor_clienta > 0 && !['terminado'].includes(t.estado) ? ' · <span class="chip ok">a favor ' + plata(t.a_favor_clienta) + '</span>' : '') + '</span>' +
+    '<div class="fila entre"><span>Total <b>' + plata(t.total) + '</b>' + (sena ? ' · <span class="muted">' + sena + '</span>' : '') + (aFavorExtra(t) > 0 ? ' · <span class="chip ok">a favor ' + plata(aFavorExtra(t)) + '</span>' : '') + '</span>' +
     (t.venta ? '<span class="muted">Venta ' + esc(t.venta) + '</span>' : '') + '</div>' +
     (t.nota_clienta ? '<p class="muted">Nota de la clienta: ' + esc(t.nota_clienta) + '</p>' : '') + (t.nota_interna ? '<p class="aviso">' + esc(t.nota_interna) + '</p>' : '') +
     (t.motivo_cancelacion ? '<p class="muted">' + esc(t.motivo_cancelacion) + '</p>' : '') + accionesTurno(t) + '</article>';
@@ -248,7 +256,7 @@ async function vAgenda(el) {
   const activos = AG.turnos.filter((t) => !/cancelado|vencido|rechazado/.test(t.estado));
   const bajas = AG.turnos.filter((t) => /cancelado|vencido|rechazado/.test(t.estado));
   let h = '<div class="vista">';
-  if (!AG.caja_abierta) h += '<div class="aviso fila entre"><span>La caja está <b>cerrada</b>. Abrila para cobrar en efectivo.</span><button class="btn chico" id="irCaja">Abrir caja</button></div>';
+  if (!AG.caja_abierta) h += '<div class="aviso fila entre"><span>La caja está <b>cerrada</b>. Abrila para cobrar.</span><button class="btn chico" id="irCaja">Abrir caja</button></div>';
   if (!CENTRO.whatsapp || !CENTRO.alias) h += '<p class="aviso">Falta cargar ' + [!CENTRO.whatsapp && 'el WhatsApp del centro', !CENTRO.alias && 'el alias para las señas'].filter(Boolean).join(' y ') + ' (Ajustes → Configuración, lo carga el superusuario).</p>';
   if (AG.senas_pendientes.length) h += '<section class="card" style="border-color:#c9a227"><h3>Señas para controlar (' + AG.senas_pendientes.length + ')</h3><div class="lista">' + AG.senas_pendientes.map((t) => turnoHtml(t, true)).join('') + '</div></section>';
   h += '<div class="dianav"><button class="btn sec chico" id="ant" aria-label="Día anterior">‹</button><span class="hoy">' + fDia(FECHA + 'T15:00:00Z') + '</span>' +
@@ -304,7 +312,16 @@ async function accion(a, t, btn) {
   if (a === 'cobrar') return cobrar(t);
   if (a === 'reprogramar') return reprogramar(t);
 }
-function cobrar(t) {
+async function cobrar(t) {
+  const aFavor0 = Math.min(t.a_favor_clienta || 0, t.total);
+  if (t.total - aFavor0 > 0.004) {
+    let pc = null; try { pc = await rpc('panel_caja'); } catch (e) { pc = null; }
+    if (pc && !pc.abierta) {
+      const m = modal('<h3>La caja está cerrada</h3><p>Para cobrar, primero abrí la caja.</p><div class="fila"><button class="btn" id="irc">Ir a la caja</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div>');
+      $('#irc', m).onclick = () => { cerrarModal(); mostrar('caja'); };
+      return;
+    }
+  }
   const aFavor = Math.min(t.a_favor_clienta || 0, t.total), resto = Math.max(0, Math.round((t.total - aFavor) * 100) / 100);
   const c = modal('<h3>Cobrar · ' + esc(t.cliente.nombre) + '</h3>' + itemsHtml(t) + '<table class="tabla"><tr><td>Total</td><td class="n">' + plata(t.total) + '</td></tr>' +
     '<tr><td>Seña y saldo a favor</td><td class="n">− ' + plata(aFavor) + '</td></tr><tr><td><b>A cobrar</b></td><td class="n total" id="resto">' + plata(resto) + '</td></tr></table>' +
@@ -323,7 +340,7 @@ function cobrar(t) {
   });
 }
 // Elegir horarios para una lista de renglones [{servicio_id, profesional_id, cantidad, nombre}]
-async function elegirHorarios(cont, lineas, fecha, alElegir) {
+async function elegirHorarios(cont, lineas, fecha, alElegir, turnoId) {
   cont.innerHTML = '<p class="cargando">Buscando horarios…</p>';
   let h = '';
   try {
@@ -332,24 +349,25 @@ async function elegirHorarios(cont, lineas, fecha, alElegir) {
       if (k > 0 && !lineas[k - 1].inicio) { h += '<p class="muted">' + esc(l.nombre) + ': elegí primero el horario anterior.</p>'; continue; }
       const prev = lineas[k - 1];
       const desde = prev && prev.inicio && !(CENTRO && CENTRO.permite_simultaneos) ? new Date(new Date(prev.inicio).getTime() + prev.duracion * prev.cantidad * 60000).toISOString() : null;
-      const slots = await rpc('turnos_disponibles', { p_servicio: l.servicio_id, p_fecha: fecha, p_profesional: l.profesional_id, p_cantidad: l.cantidad, p_desde: desde });
+      const arg = { p_servicio: l.servicio_id, p_fecha: fecha, p_profesional: l.profesional_id, p_cantidad: l.cantidad, p_desde: desde };
+      const slots = turnoId ? await rpc('turnos_disponibles_reprogramar', Object.assign({ p_turno: turnoId }, arg)) : await rpc('turnos_disponibles', arg);
       h += '<div class="campo"><label>' + esc(l.nombre) + (l.cantidad > 1 ? ' · ' + l.cantidad + ' zonas' : '') + '</label>' + (slots.length ? '<div class="horas">' + slots.map((s) =>
         '<button type="button" data-k="' + k + '" data-i="' + s.inicio + '" data-p="' + (l.profesional_id || s.profesionales[0].id) + '" title="' + esc(s.profesionales.map((p) => p.nombre).join(', ')) + '" aria-pressed="' + (l.inicio && +new Date(l.inicio) === +new Date(s.inicio)) + '">' + s.hora + '</button>').join('') + '</div>' : '<p class="muted">Sin horarios libres ese día.</p>') + '</div>';
     }
     cont.innerHTML = h;
-    $$('.horas button', cont).forEach((b) => b.onclick = () => { const k = +b.dataset.k; lineas[k].inicio = b.dataset.i; for (let j = k + 1; j < lineas.length; j++) lineas[j].inicio = null; elegirHorarios(cont, lineas, fecha, alElegir); alElegir(); });
+    $$('.horas button', cont).forEach((b) => b.onclick = () => { const k = +b.dataset.k; lineas[k].inicio = b.dataset.i; for (let j = k + 1; j < lineas.length; j++) lineas[j].inicio = null; elegirHorarios(cont, lineas, fecha, alElegir, turnoId); alElegir(); });
   } catch (e) { errorEn(cont, e); }
 }
 async function reprogramar(t) {
   const servs = await rpc('gestion_servicios');
   const lineas = t.items.filter((i) => i.estado !== 'cancelado').map((i) => ({ servicio_id: i.servicio_id, profesional_id: i.profesional_id, cantidad: i.cantidad, nombre: i.servicio + ' · ' + i.profesional,
     duracion: (servs.find((s) => s.id === i.servicio_id) || {}).duracion_min || 30, inicio: null }));
-  let fecha = FECHA;
+  let fecha = t.inicio ? diaISO(t.inicio) : FECHA;
   const c = modal('<h3>Reprogramar · ' + esc(t.cliente.nombre) + '</h3><p class="muted">La seña pasa al turno nuevo.</p><div class="campo"><label for="rf">Día</label><input type="date" id="rf" value="' + fecha + '"></div><div id="rh"></div>' +
     '<div class="campo"><label for="mot">Motivo</label><input id="mot" value="Pidió cambiar el horario"></div><div class="fila"><button class="btn" id="ok" disabled>Reprogramar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
   const listo = () => { $('#ok', c).disabled = !lineas.every((l) => l.inicio); };
-  $('#rf', c).onchange = (e) => { fecha = e.target.value; lineas.forEach((l) => l.inicio = null); listo(); elegirHorarios($('#rh', c), lineas, fecha, listo); };
-  elegirHorarios($('#rh', c), lineas, fecha, listo);
+  $('#rf', c).onchange = (e) => { fecha = e.target.value; lineas.forEach((l) => l.inicio = null); listo(); elegirHorarios($('#rh', c), lineas, fecha, listo, t.id); };
+  elegirHorarios($('#rh', c), lineas, fecha, listo, t.id);
   $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
     try { await rpc('turno_reprogramar', { p_turno: t.id, p_items: lineas.map((l) => ({ servicio_id: l.servicio_id, profesional_id: l.profesional_id, cantidad: l.cantidad, inicio: l.inicio })), p_motivo: $('#mot', c).value });
       cerrarModal(); mostrar('agenda'); } catch (e) { errorEn($('#err', c), e); }
@@ -429,20 +447,21 @@ async function vNuevo(el) {
 async function vCaja(el) {
   const c = await rpc('panel_caja');
   if (!c.abierta) {
-    el.innerHTML = '<div class="vista"><h2>Caja</h2><section class="card"><p>La caja está <b>cerrada</b>.' + (c.ultima ? ' Última: ' + esc(c.ultima.fecha) + ' (' + esc(c.ultima.estado) + ').' : '') + '</p>' +
+    el.innerHTML = '<div class="vista"><h2>Caja</h2><section class="card"><p>La caja está <b>cerrada</b>.' + (c.ultima ? ' Última: ' + fFecha(c.ultima.fecha) + ' (' + esc(c.ultima.estado) + ').' : '') + '</p>' +
       '<div class="campo"><label for="si">Efectivo con el que arrancás</label><input id="si" type="number" min="0" step="0.01" inputmode="decimal" value="0"></div><button class="btn" id="ab">Abrir caja</button><div id="err"></div></section>' +
-      '<p class="muted">Las señas por transferencia se pueden registrar aunque la caja esté cerrada. Para cobrar en el local, abrí la caja.</p></div>';
+      '<p class="muted">Las señas por transferencia se pueden registrar aunque la caja esté cerrada. Para cobrar, abrí la caja. Se puede abrir y cerrar varias veces en el día (por ejemplo, mañana y tarde).</p></div>';
     $('#ab').onclick = () => conBoton($('#ab'), async () => { try { await rpc('abrir_caja', { p_saldo_inicial: +$('#si').value || 0 }); mostrar('caja'); } catch (e) { errorEn($('#err'), e); } });
     return;
   }
   const res = c.resumen || [];
-  el.innerHTML = '<div class="vista"><h2>Caja abierta · ' + esc(c.fecha) + '</h2><section class="card"><table class="tabla"><tr><th>Medio</th><th class="n">Entró</th><th class="n">Salió</th><th class="n">Hay</th></tr>' +
+  el.innerHTML = '<div class="vista"><h2>Caja abierta · ' + fFecha(c.fecha) + '</h2><section class="card"><table class="tabla"><tr><th>Medio</th><th class="n">Entró</th><th class="n">Salió</th><th class="n">Hay</th></tr>' +
     res.map((r) => '<tr><td>' + esc(r.medio) + '</td><td class="n">' + plata(r.ingresos) + '</td><td class="n">' + plata(r.egresos) + '</td><td class="n"><b>' + plata(r.saldo) + '</b></td></tr>').join('') + '</table></section>' +
     '<section class="card"><h3>Cerrar la caja</h3><p class="muted">Contá lo que hay y cargalo. Si no coincide, queda registrada la diferencia.</p>' +
-    res.map((r) => '<div class="campo"><label for="ct' + r.medio_pago_id + '">' + esc(r.medio) + ' contado</label><input id="ct' + r.medio_pago_id + '" data-m="' + r.medio_pago_id + '" type="number" step="0.01" inputmode="decimal" value="' + r.saldo + '"></div>').join('') +
+    res.map((r) => '<div class="campo"><label for="ct' + r.medio_pago_id + '">' + esc(r.medio) + ' contado</label><input id="ct' + r.medio_pago_id + '" data-m="' + r.medio_pago_id + '" type="number" step="0.01" inputmode="decimal" placeholder="Contá y escribí cuánto hay"></div>').join('') +
     '<div class="campo"><label for="ob">Observaciones</label><input id="ob"></div><button class="btn" id="ce">Cerrar caja</button><div id="err"></div></section>' +
     '<section class="card"><h3>Movimientos</h3><table class="tabla">' + (c.movimientos || []).map((m) => '<tr><td>' + fHora(m.fecha) + '</td><td>' + esc(m.descripcion) + '<br><span class="muted">' + esc(m.medio) + '</span></td><td class="n">' + (m.tipo === 'egreso' ? '− ' : '') + plata(m.importe) + '</td></tr>').join('') + '</table></section></div>';
   $('#ce').onclick = () => conBoton($('#ce'), async () => {
+    if ($$('[data-m]').some((i) => i.value.trim() === '')) { errorEn($('#err'), new Error('Contá y escribí cuánto hay de cada medio. Si no hay nada, poné 0.')); return; }
     try { const r = await rpc('cerrar_caja', { p_caja: c.id, p_contado: $$('[data-m]').map((i) => ({ medio_pago_id: +i.dataset.m, importe: +i.value })), p_observaciones: $('#ob').value || null });
       const m = modal('<h3>Caja cerrada ✓</h3><table class="tabla"><tr><th>Medio</th><th class="n">Sistema</th><th class="n">Contado</th><th class="n">Diferencia</th></tr>' + r.map((x) => '<tr><td>' + esc(x.medio) + '</td><td class="n">' + plata(x.sistema) + '</td><td class="n">' + plata(x.contado) + '</td><td class="n">' + plata(x.diferencia) + '</td></tr>').join('') + '</table><button class="btn" id="fin">Listo</button>');
       $('#fin', m).onclick = () => { cerrarModal(); mostrar('caja'); };
