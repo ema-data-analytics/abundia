@@ -108,6 +108,27 @@ main { padding-bottom: 120px }
 .modal { position: fixed; inset: 0; background: rgba(7,37,25,.55); display: grid; place-items: center; padding: 16px; z-index: 50 }
 .modal .caja { max-width: 420px; width: 100% }
 .pie { text-align: center; color: var(--muted); font-size: .8rem; padding: 18px 0 30px }
+/* ---- Promociones y banners (igual en la página de clientas y en la vista previa de gestión) ---- */
+.promos { display: grid; gap: 12px; margin: 4px 0 18px }
+.banners { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px }
+.banners::-webkit-scrollbar { display: none }
+.banner { flex: 0 0 100%; scroll-snap-align: center; border-radius: 14px; overflow: hidden; background: var(--marca); position: relative; margin: 0 }
+.banners.varios .banner { flex-basis: 88% }
+.banner img { display: block; width: 100%; height: auto; max-height: 460px; object-fit: cover }
+.banner .reservar { position: absolute; right: 10px; bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.25) }
+.promo { border-radius: 14px; overflow: hidden; border: 1px solid transparent; margin: 0 }
+.promo img { display: block; width: 100%; height: auto; max-height: 280px; object-fit: cover }
+.promo .cuerpo { padding: 14px 16px 16px; display: grid; gap: 6px }
+.promo h3 { font-family: var(--f-display); font-size: 1.5rem; line-height: 1.1; margin: 0; overflow-wrap: anywhere }
+.promo p { margin: 0; overflow-wrap: anywhere }
+.promo .etq { justify-self: start; font-weight: 700; font-size: .85rem; border-radius: 999px; padding: 3px 11px; letter-spacing: .02em }
+.promo .hasta { font-size: .82rem; opacity: .8 }
+.reservar { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 10px 18px; cursor: pointer; justify-self: start; background: var(--oro-claro); color: var(--marca) }
+.promo.e1 { background: var(--marca); color: #f6efe2 } .promo.e1 .etq { background: var(--oro-claro); color: var(--marca) }
+.promo.e2 { background: var(--oro-claro); color: var(--marca) } .promo.e2 .etq { background: var(--marca); color: var(--oro-claro) } .promo.e2 .reservar { background: var(--marca); color: #f6efe2 }
+.promo.e3 { background: var(--oro-suave); color: var(--marca) } .promo.e3 .etq { background: var(--oro); color: #fff } .promo.e3 .reservar { background: var(--marca); color: #f6efe2 }
+.promo.e4 { background: #fff; color: #13261c; border-color: var(--oro) } .promo.e4 .etq { background: #9b3b2e; color: #fff } .promo.e4 .reservar { background: var(--marca); color: #f6efe2 }
+
 </style>
 </head>
 <body>
@@ -121,6 +142,52 @@ main { padding-bottom: 120px }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
+// ---- Promociones y banners (igual en la página de clientas y en la vista previa de gestión) ----
+const ESTILOS_PROMO = [[1, 'Verde Abundia'], [2, 'Dorado'], [3, 'Crema'], [4, 'Blanco']];
+function fechaCortaPromo(iso) { const x = String(iso || '').slice(0, 10).split('-'); return x.length === 3 ? x[2] + '/' + x[1] : ''; }
+// conBoton: true muestra el botón "Reservar" (si la promo tiene un servicio que se puede reservar)
+function promoHtml(pr, conBoton) {
+  const escP = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const boton = conBoton && pr.servicio_id ? '<button type="button" class="reservar" data-promo-s="' + pr.servicio_id + '">Reservar</button>' : '';
+  if (pr.tipo === 'banner') return '<figure class="banner">' + (pr.imagen ? '<img src="' + pr.imagen + '" alt="' + escP(pr.titulo) + '">' : '') + boton + '</figure>';
+  return '<article class="promo e' + (pr.estilo || 1) + '">' + (pr.imagen ? '<img src="' + pr.imagen + '" alt="">' : '') + '<div class="cuerpo">' +
+    (pr.etiqueta ? '<span class="etq">' + escP(pr.etiqueta) + '</span>' : '') + '<h3>' + escP(pr.titulo) + '</h3>' +
+    (pr.texto ? '<p>' + escP(pr.texto) + '</p>' : '') + (pr.hasta ? '<span class="hasta">Hasta el ' + fechaCortaPromo(pr.hasta) + '</span>' : '') + boton + '</div></article>';
+}
+function promosHtml(lista, conBoton) {
+  if (!lista || !lista.length) return '';
+  const bs = lista.filter((p) => p.tipo === 'banner'), ps = lista.filter((p) => p.tipo !== 'banner');
+  return '<section class="promos" aria-label="Promociones">' + (bs.length ? '<div class="banners' + (bs.length > 1 ? ' varios' : '') + '">' + bs.map((p) => promoHtml(p, conBoton)).join('') + '</div>' : '') +
+    ps.map((p) => promoHtml(p, conBoton)).join('') + '</section>';
+}
+// Achica una foto en el navegador antes de guardarla (máx. 1080 px de ancho, webp o jpg, menos de ~600 KB)
+function achicarFoto(archivo) {
+  return new Promise((ok, mal) => {
+    if (!archivo || !/^image\//.test(archivo.type)) return mal(new Error('Elegí una foto o imagen.'));
+    const lector = new FileReader();
+    lector.onerror = () => mal(new Error('No se pudo leer la foto.'));
+    lector.onload = () => {
+      const im = new Image();
+      im.onerror = () => mal(new Error('No se pudo abrir la foto. Probá con otra.'));
+      im.onload = () => {
+        let ancho = Math.min(1080, im.naturalWidth), cal = 0.82, url = '';
+        for (let intento = 0; intento < 8; intento++) {
+          const alto = Math.round(im.naturalHeight * ancho / im.naturalWidth);
+          const cv = document.createElement('canvas'); cv.width = ancho; cv.height = alto;
+          cv.getContext('2d').drawImage(im, 0, 0, ancho, alto);
+          url = cv.toDataURL('image/webp', cal);
+          if (!url.startsWith('data:image/webp')) url = cv.toDataURL('image/jpeg', cal);
+          if (url.length <= 600000) return ok(url);
+          if (cal > 0.55) cal -= 0.1; else ancho = Math.round(ancho * 0.8);
+        }
+        mal(new Error('La foto es muy pesada. Probá con otra.'));
+      };
+      im.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
+
 const SB_URL = 'https://bxdycelatncchqicigrl.supabase.co';
 const SB_KEY = 'sb_publishable_sbyO2b0alUBSBvxkd-Ur1A_XYH-Tgx_';
 const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -147,6 +214,7 @@ async function rpc(fn, args) {
 }
 
 let C = null;              // catálogo
+let PROMOS = [];           // promociones vigentes (si fallan, la página sigue igual)
 const S = { paso: 1, items: [], dia: null, slots: {}, nombre: '', celular: '', nota: '', acepto: false, enviando: false, error: '' };
 const clave = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
 
@@ -170,7 +238,7 @@ function paso1() {
   S.paso = 1;
   const cats = [];
   C.servicios.forEach((s) => { let c = cats.find((x) => x.n === s.categoria); if (!c) cats.push(c = { n: s.categoria, l: [] }); c.l.push(s); });
-  app.innerHTML = titulo(1, '¿Qué te querés hacer?', 'Podés elegir más de un servicio.') + errorHtml() + '<div class="vista">' +
+  app.innerHTML = promosHtml(PROMOS, true) + titulo(1, '¿Qué te querés hacer?', 'Podés elegir más de un servicio.') + errorHtml() + '<div class="vista">' +
     (cats.length ? cats.map((c) => '<section class="cat"><h3>' + esc(c.n) + '</h3>' + c.l.map((s) => {
       const it = S.items.find((i) => i.servicio_id === s.id);
       return '<div><button type="button" class="serv" aria-pressed="' + !!it + '" data-s="' + s.id + '"><span class="check">✓</span><span><span class="nom">' + esc(s.nombre) + '</span>' +
@@ -183,6 +251,13 @@ function paso1() {
     const id = +b.dataset.s, i = S.items.findIndex((x) => x.servicio_id === id);
     if (i >= 0) S.items.splice(i, 1); else S.items.push({ servicio_id: id, cantidad: 1, profesional_id: null, inicio: null });
     S.error = ''; paso1();
+  });
+  app.querySelectorAll('[data-promo-s]').forEach((b) => b.onclick = () => {
+    const id = +b.dataset.promoS;
+    if (!servicio(id)) return;
+    if (!S.items.some((x) => x.servicio_id === id)) S.items.push({ servicio_id: id, cantidad: 1, profesional_id: null, inicio: null });
+    S.error = ''; paso1();
+    const el = app.querySelector('.serv[data-s="' + id + '"]'); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   });
   app.querySelectorAll('[data-z]').forEach((b) => b.onclick = () => {
     const it = S.items.find((x) => x.servicio_id === +b.dataset.s), s = servicio(it.servicio_id);
@@ -353,7 +428,8 @@ async function abrirTurno(tok, mensaje) {
   try {
     const tok = new URLSearchParams(location.search).get('t');
     if (tok) return await abrirTurno(tok);
-    C = await rpc('turnos_catalogo');
+    [C, PROMOS] = await Promise.all([rpc('turnos_catalogo'), rpc('promociones_vigentes').catch(() => [])]);
+    if (!Array.isArray(PROMOS)) PROMOS = [];
     if (C.centro && C.centro.nombre) document.title = C.centro.nombre + ' · Pedí tu turno';
     paso1();
   } catch (e) { app.innerHTML = '<p class="aviso error" style="margin-top:20px">No pudimos cargar la página: ' + esc(e.message) + '. Probá de nuevo en un rato.</p>'; }

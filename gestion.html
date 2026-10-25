@@ -61,6 +61,7 @@ main { padding-block: 16px 60px }
 .campo { display: grid; gap: 4px }
 .campo label { font-size: .85rem; font-weight: 500 }
 .campo label span { color: var(--muted); font-weight: 400 }
+.campo .lbl { font-size: .85rem; font-weight: 500 } .campo .lbl span { color: var(--muted); font-weight: 400 } .campo label.btn { font-size: .95rem; font-weight: 600 } .campo label.color { font-size: .9rem }
 .campo input, .campo select, .campo textarea { padding: 10px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); width: 100%; min-height: 44px }
 .grilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px }
 .check { display: flex; gap: 8px; align-items: center; font-size: .95rem }
@@ -81,7 +82,13 @@ main { padding-block: 16px 60px }
 .horas button[aria-pressed="true"] { background: var(--marca); color: var(--oro-claro); border-color: var(--marca) }
 .lista { display: grid; gap: 8px }
 .item { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-align: left; width: 100% }
-.item.det { flex-wrap: wrap } .item.det .fila { flex-wrap: wrap; min-width: 0 } .item.det select { max-width: 100% }
+.item.det { flex-wrap: wrap }
+.promo-item .mini { flex: none; width: 54px; height: 54px; border-radius: 10px; overflow: hidden; display: grid } .promo-item .mini img { width: 100%; height: 100%; object-fit: cover } .promo-item .mini i { display: block } .promo-item .tx { flex: 1; min-width: 0 }
+.promo-item { flex-wrap: wrap }
+.colores { display: flex; flex-wrap: wrap; gap: 8px } .color { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; cursor: pointer; font-size: .9rem } .color i, .promo-item .mini i { flex: none; width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line) } .color:has(input:checked) { border-color: var(--marca); box-shadow: 0 0 0 2px var(--marca) inset }
+.foto-btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer } .foto-btn input { position: absolute; width: 1px; height: 1px; opacity: 0 } .promo-item .mini i { width: 100%; height: 100% }
+i.e1 { background: var(--marca) } i.e2 { background: var(--oro-claro) } i.e3 { background: var(--oro-suave) } i.e4 { background: #fff; border-color: var(--oro) }
+.vprev { background: var(--bg); border-radius: 12px; padding: 10px } .vprev .promos { margin: 0 } .item.det .fila { flex-wrap: wrap; min-width: 0 } .item.det select { max-width: 100% }
 .tabla { width: 100%; border-collapse: collapse; font-size: .92rem }
 .tabla th, .tabla td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line) }
 .tabla td.n, .tabla th.n { text-align: right; font-variant-numeric: tabular-nums }
@@ -98,6 +105,27 @@ main { padding-block: 16px 60px }
 .login img { width: 180px; display: block; margin: 0 auto 10px; border-radius: 12px }
 .cargando { text-align: center; color: var(--muted); padding: 30px 0 }
 .total { font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums }
+/* ---- Promociones y banners (igual en la página de clientas y en la vista previa de gestión) ---- */
+.promos { display: grid; gap: 12px; margin: 4px 0 18px }
+.banners { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px }
+.banners::-webkit-scrollbar { display: none }
+.banner { flex: 0 0 100%; scroll-snap-align: center; border-radius: 14px; overflow: hidden; background: var(--marca); position: relative; margin: 0 }
+.banners.varios .banner { flex-basis: 88% }
+.banner img { display: block; width: 100%; height: auto; max-height: 460px; object-fit: cover }
+.banner .reservar { position: absolute; right: 10px; bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.25) }
+.promo { border-radius: 14px; overflow: hidden; border: 1px solid transparent; margin: 0 }
+.promo img { display: block; width: 100%; height: auto; max-height: 280px; object-fit: cover }
+.promo .cuerpo { padding: 14px 16px 16px; display: grid; gap: 6px }
+.promo h3 { font-family: var(--f-display); font-size: 1.5rem; line-height: 1.1; margin: 0; overflow-wrap: anywhere }
+.promo p { margin: 0; overflow-wrap: anywhere }
+.promo .etq { justify-self: start; font-weight: 700; font-size: .85rem; border-radius: 999px; padding: 3px 11px; letter-spacing: .02em }
+.promo .hasta { font-size: .82rem; opacity: .8 }
+.reservar { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 10px 18px; cursor: pointer; justify-self: start; background: var(--oro-claro); color: var(--marca) }
+.promo.e1 { background: var(--marca); color: #f6efe2 } .promo.e1 .etq { background: var(--oro-claro); color: var(--marca) }
+.promo.e2 { background: var(--oro-claro); color: var(--marca) } .promo.e2 .etq { background: var(--marca); color: var(--oro-claro) } .promo.e2 .reservar { background: var(--marca); color: #f6efe2 }
+.promo.e3 { background: var(--oro-suave); color: var(--marca) } .promo.e3 .etq { background: var(--oro); color: #fff } .promo.e3 .reservar { background: var(--marca); color: #f6efe2 }
+.promo.e4 { background: #fff; color: #13261c; border-color: var(--oro) } .promo.e4 .etq { background: #9b3b2e; color: #fff } .promo.e4 .reservar { background: var(--marca); color: #f6efe2 }
+
 </style>
 </head>
 <body>
@@ -106,6 +134,52 @@ main { padding-block: 16px 60px }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
+// ---- Promociones y banners (igual en la página de clientas y en la vista previa de gestión) ----
+const ESTILOS_PROMO = [[1, 'Verde Abundia'], [2, 'Dorado'], [3, 'Crema'], [4, 'Blanco']];
+function fechaCortaPromo(iso) { const x = String(iso || '').slice(0, 10).split('-'); return x.length === 3 ? x[2] + '/' + x[1] : ''; }
+// conBoton: true muestra el botón "Reservar" (si la promo tiene un servicio que se puede reservar)
+function promoHtml(pr, conBoton) {
+  const escP = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const boton = conBoton && pr.servicio_id ? '<button type="button" class="reservar" data-promo-s="' + pr.servicio_id + '">Reservar</button>' : '';
+  if (pr.tipo === 'banner') return '<figure class="banner">' + (pr.imagen ? '<img src="' + pr.imagen + '" alt="' + escP(pr.titulo) + '">' : '') + boton + '</figure>';
+  return '<article class="promo e' + (pr.estilo || 1) + '">' + (pr.imagen ? '<img src="' + pr.imagen + '" alt="">' : '') + '<div class="cuerpo">' +
+    (pr.etiqueta ? '<span class="etq">' + escP(pr.etiqueta) + '</span>' : '') + '<h3>' + escP(pr.titulo) + '</h3>' +
+    (pr.texto ? '<p>' + escP(pr.texto) + '</p>' : '') + (pr.hasta ? '<span class="hasta">Hasta el ' + fechaCortaPromo(pr.hasta) + '</span>' : '') + boton + '</div></article>';
+}
+function promosHtml(lista, conBoton) {
+  if (!lista || !lista.length) return '';
+  const bs = lista.filter((p) => p.tipo === 'banner'), ps = lista.filter((p) => p.tipo !== 'banner');
+  return '<section class="promos" aria-label="Promociones">' + (bs.length ? '<div class="banners' + (bs.length > 1 ? ' varios' : '') + '">' + bs.map((p) => promoHtml(p, conBoton)).join('') + '</div>' : '') +
+    ps.map((p) => promoHtml(p, conBoton)).join('') + '</section>';
+}
+// Achica una foto en el navegador antes de guardarla (máx. 1080 px de ancho, webp o jpg, menos de ~600 KB)
+function achicarFoto(archivo) {
+  return new Promise((ok, mal) => {
+    if (!archivo || !/^image\//.test(archivo.type)) return mal(new Error('Elegí una foto o imagen.'));
+    const lector = new FileReader();
+    lector.onerror = () => mal(new Error('No se pudo leer la foto.'));
+    lector.onload = () => {
+      const im = new Image();
+      im.onerror = () => mal(new Error('No se pudo abrir la foto. Probá con otra.'));
+      im.onload = () => {
+        let ancho = Math.min(1080, im.naturalWidth), cal = 0.82, url = '';
+        for (let intento = 0; intento < 8; intento++) {
+          const alto = Math.round(im.naturalHeight * ancho / im.naturalWidth);
+          const cv = document.createElement('canvas'); cv.width = ancho; cv.height = alto;
+          cv.getContext('2d').drawImage(im, 0, 0, ancho, alto);
+          url = cv.toDataURL('image/webp', cal);
+          if (!url.startsWith('data:image/webp')) url = cv.toDataURL('image/jpeg', cal);
+          if (url.length <= 600000) return ok(url);
+          if (cal > 0.55) cal -= 0.1; else ancho = Math.round(ancho * 0.8);
+        }
+        mal(new Error('La foto es muy pesada. Probá con otra.'));
+      };
+      im.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
+
 const SB_URL = 'https://bxdycelatncchqicigrl.supabase.co';
 const SB_KEY = 'sb_publishable_sbyO2b0alUBSBvxkd-Ur1A_XYH-Tgx_';
 const PUBLICA = 'reservar.html';
@@ -495,12 +569,12 @@ async function vClientas(el) {
 // =============================================================== Ajustes
 let SUB = 'servicios';
 async function vAjustes(el) {
-  const subs = [['servicios', 'Servicios'], ['profesionales', 'Profesionales'], ['cabinas', 'Cabinas'], ['horario', 'Horario del centro'], ['bloqueos', 'Bloqueos y feriados'], ['config', 'Configuración']];
+  const subs = [['servicios', 'Servicios'], ['promos', 'Promociones'], ['profesionales', 'Profesionales'], ['cabinas', 'Cabinas'], ['horario', 'Horario del centro'], ['bloqueos', 'Bloqueos y feriados'], ['config', 'Configuración']];
   if (YO.es_super) subs.push(['usuarios', 'Usuarios']);
   el.innerHTML = '<div class="vista"><div class="sub">' + subs.map(([k, n]) => '<button type="button" data-s="' + k + '" aria-pressed="' + (k === SUB) + '">' + n + '</button>').join('') + '</div><div id="sv"></div></div>';
   $$('.sub button').forEach((b) => b.onclick = () => { SUB = b.dataset.s; vAjustes(el); });
   const sv = $('#sv'); sv.innerHTML = '<p class="cargando">Cargando…</p>';
-  try { await ({ servicios: aServicios, profesionales: aProfesionales, cabinas: aCabinas, horario: aHorario, bloqueos: aBloqueos, config: aConfig, usuarios: aUsuarios })[SUB](sv); }
+  try { await ({ servicios: aServicios, promos: aPromos, profesionales: aProfesionales, cabinas: aCabinas, horario: aHorario, bloqueos: aBloqueos, config: aConfig, usuarios: aUsuarios })[SUB](sv); }
   catch (e) { errorEn(sv, e); }
 }
 function franjasHtml(lista) {
@@ -568,6 +642,57 @@ async function aProfesionales(sv) {
   };
   $('#nv').onclick = () => editar();
   $$('[data-id]', sv).forEach((b) => b.onclick = () => editar(profs.find((x) => x.id === +b.dataset.id)));
+}
+// ---------------------------------------------------------------- Promociones, banners y flyers
+async function aPromos(sv) {
+  const [ps, servs] = await Promise.all([rpc('promociones_listar'), rpc('gestion_servicios')]);
+  const SIT = { 'en la página': 'ok', programada: 'info', terminada: 'mal', pausada: 'mal' };
+  sv.innerHTML = '<div class="fila entre"><h2>Promociones y banners</h2><button class="btn" id="nv">+ Nueva</button></div>' +
+    '<p class="muted">Lo que cargás acá aparece arriba en la página de las clientas, entre las fechas que elijas.</p>' +
+    (ps.length ? '<div class="lista">' + ps.map((x) => '<div class="item promo-item"><span class="mini">' + (x.imagen ? '<img src="' + x.imagen + '" alt="">' : '<i class="e' + x.estilo + '"></i>') + '</span>' +
+      '<span class="tx"><b>' + esc(x.titulo) + '</b> <span class="chip ' + (SIT[x.situacion] || '') + '">' + esc(x.situacion) + '</span><br><span class="muted">' + (x.tipo === 'banner' ? 'Banner / flyer' : 'Promo') +
+      ' · desde ' + fFecha(x.desde) + (x.hasta ? ' hasta ' + fFecha(x.hasta) : ' sin fecha de fin') + (x.servicio ? ' · ' + esc(x.servicio) : '') + '</span></span>' +
+      '<span class="fila"><button class="btn sec chico" data-ed="' + x.id + '">Editar</button><button class="btn sec chico" data-es="' + x.id + '">' + (x.estado === 'activa' ? 'Pausar' : 'Mostrar') + '</button></span></div>').join('') + '</div>'
+      : '<p class="card muted">Todavía no hay promociones. Tocá <b>+ Nueva</b> para armar la primera.</p>') + '<div id="err"></div>';
+  $('#nv').onclick = () => editarPromo(null, servs);
+  $$('[data-ed]', sv).forEach((b) => b.onclick = () => editarPromo(ps.find((x) => x.id === +b.dataset.ed), servs));
+  $$('[data-es]', sv).forEach((b) => b.onclick = () => conBoton(b, async () => { const x = ps.find((y) => y.id === +b.dataset.es);
+    try { await rpc('promocion_estado', { p_id: x.id, p_estado: x.estado === 'activa' ? 'pausada' : 'activa' }); vAjustes($('#vista')); } catch (e) { errorEn($('#err'), e); } }));
+}
+function editarPromo(x, servs) {
+  const P = x ? Object.assign({}, x) : { tipo: 'promo', titulo: '', texto: '', etiqueta: '', estilo: 1, imagen: null, servicio_id: null, desde: hoyISO(), hasta: '' };
+  let cambioImagen = false;
+  const c = modal('<h3>' + (x ? 'Editar promoción' : 'Promoción nueva') + '</h3>' +
+    '<div class="campo"><label>¿Qué querés armar?</label><label class="check"><input type="radio" name="ptipo" value="promo"' + (P.tipo !== 'banner' ? ' checked' : '') + '> <span><b>Promo</b>: tarjeta con título, texto y precio. La foto es opcional.</span></label>' +
+    '<label class="check"><input type="radio" name="ptipo" value="banner"' + (P.tipo === 'banner' ? ' checked' : '') + '> <span><b>Banner o flyer</b>: una imagen ya diseñada (por ejemplo, de Canva).</span></label></div>' +
+    '<div class="campo"><label for="pt">Título <span>(se lee grande)</span></label><input id="pt" maxlength="60" placeholder="Ej.: Mío Up 2x1" value="' + esc(P.titulo) + '"></div>' +
+    '<div class="campo solo-promo"><label for="px">Texto <span>(opcional)</span></label><textarea id="px" rows="2" maxlength="220" placeholder="Ej.: Toda la semana, la segunda zona de regalo.">' + esc(P.texto || '') + '</textarea></div>' +
+    '<div class="campo solo-promo"><label for="pe">Etiqueta <span>(opcional, ej.: 20% OFF o $4.000)</span></label><input id="pe" maxlength="24" value="' + esc(P.etiqueta || '') + '"></div>' +
+    '<div class="campo solo-promo"><label>Color</label><div class="colores">' + ESTILOS_PROMO.map(([k, n]) => '<label class="color"><input type="radio" name="pcol" value="' + k + '"' + (+P.estilo === k ? ' checked' : '') + '><i class="e' + k + '"></i>' + n + '</label>').join('') + '</div></div>' +
+    '<div class="campo"><span class="lbl">Foto o flyer <span class="txtfoto">(opcional)</span></span><div class="fila"><label class="btn sec foto-btn">📷 Elegir foto o flyer<input id="pf" type="file" accept="image/*"></label><button type="button" class="btn sec chico" id="psin">Sacar la foto</button></div><span class="muted" id="pfm"></span></div>' +
+    '<div class="campo"><label for="ps">Botón "Reservar" <span>(opcional)</span></label><select id="ps"><option value="">Sin botón</option>' + servs.filter((s) => s.estado === 'activo').map((s) => '<option value="' + s.id + '"' + (s.id === P.servicio_id ? ' selected' : '') + '>' + esc(s.nombre) + (s.precio == null ? ' (sin precio: no se ve el botón)' : '') + '</option>').join('') + '</select></div>' +
+    '<div class="grilla"><div class="campo"><label for="pd">Se ve desde</label><input id="pd" type="date" value="' + esc(String(P.desde || '').slice(0, 10)) + '"></div>' +
+    '<div class="campo"><label for="ph">Hasta <span>(vacío = sin fin)</span></label><input id="ph" type="date" value="' + esc(String(P.hasta || '').slice(0, 10)) + '"></div></div>' +
+    '<div class="campo"><label>Así se ve en la página</label><div id="pv" class="vprev"></div></div>' +
+    '<div class="fila"><button class="btn" id="ok">Guardar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err2"></div>');
+  const leer = () => { P.tipo = $('input[name=ptipo]:checked', c).value; P.titulo = $('#pt', c).value; P.texto = $('#px', c).value; P.etiqueta = $('#pe', c).value;
+    P.estilo = +$('input[name=pcol]:checked', c).value; P.servicio_id = $('#ps', c).value ? +$('#ps', c).value : null; P.desde = $('#pd', c).value; P.hasta = $('#ph', c).value; };
+  const ver = () => { leer();
+    $$('.solo-promo', c).forEach((e) => e.hidden = P.tipo === 'banner');
+    $('.txtfoto', c).textContent = P.tipo === 'banner' ? '(obligatoria)' : '(opcional)';
+    $('#psin', c).hidden = !P.imagen;
+    $('#pv', c).innerHTML = P.tipo === 'banner' && !P.imagen ? '<p class="muted">Elegí la imagen del banner para verlo.</p>' : promosHtml([Object.assign({}, P, { titulo: P.titulo || 'Título de la promo' })], true);
+    $$('#pv .reservar', c).forEach((b) => b.disabled = true); };
+  $$('input, textarea, select', c).forEach((e) => { if (e.id !== 'pf') { e.oninput = ver; e.onchange = ver; } });
+  $('#pf', c).onchange = async (e) => { const f = e.target.files[0]; if (!f) return; $('#pfm', c).textContent = 'Preparando la foto…';
+    try { P.imagen = await achicarFoto(f); cambioImagen = true; $('#pfm', c).textContent = 'Foto lista.'; } catch (er) { $('#pfm', c).textContent = er.message; } ver(); };
+  $('#psin', c).onclick = () => { P.imagen = null; cambioImagen = true; $('#pf', c).value = ''; $('#pfm', c).textContent = 'Sin foto.'; ver(); };
+  ver();
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => { leer();
+    const p = { id: x ? x.id : null, tipo: P.tipo, titulo: P.titulo, texto: P.tipo === 'banner' ? '' : P.texto, etiqueta: P.tipo === 'banner' ? '' : P.etiqueta, estilo: P.estilo,
+      servicio_id: P.servicio_id, desde: P.desde, hasta: P.hasta || null, estado: x ? x.estado : 'activa' };
+    if (!x || cambioImagen) p.imagen = P.imagen || '';
+    try { await rpc('promocion_guardar', { p }); cerrarModal(); vAjustes($('#vista')); } catch (er) { errorEn($('#err2', c), er); } });
 }
 async function aCabinas(sv) {
   const cabs = await rpc('cabinas_listar');
