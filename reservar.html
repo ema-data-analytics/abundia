@@ -342,7 +342,8 @@ function paso4() {
     '<div class="campo"><label for="nota">¿Algo que debamos saber? <span>(opcional)</span></label><textarea id="nota" rows="2">' + esc(S.nota) + '</textarea></div>' +
     '<div class="politica"><b>Antes de confirmar</b><ul>' +
     (senaSel() > 0 ? '<li>Para confirmar se paga una seña del ' + c.sena_pct + '%: <b>' + plata(senaSel()) + '</b>. Tenés <b>' + c.plazo_sena_min + ' minutos</b> para transferirla y mandar el comprobante.</li>' : '') +
-    '<li>Si anulás con ' + c.cancelacion_horas + ' h o más de anticipación, la seña queda a favor para tu próximo turno. Con menos, se pierde.</li>' +
+    '<li>Si anulás con ' + c.cancelacion_horas + ' h o más de anticipación, la seña queda a favor' + (c.reprogramar_plazo_horas ? ' y tenés ' + c.reprogramar_plazo_horas + ' h para elegir el nuevo día (si no, se pierde)' : ' para tu próximo turno') + '. Con menos, se pierde.</li>' +
+    (c.reprogramar_max > 0 ? '<li>Podés cambiar el día ' + (c.reprogramar_max === 1 ? 'una sola vez' : 'hasta ' + c.reprogramar_max + ' veces') + ', avisando con ' + c.cancelacion_horas + ' h o más.' + (c.reprogramado_pierde_sena ? ' Si después anulás el turno cambiado, la seña no se devuelve.' : '') + '</li>' : '') +
     '<li>Tolerancia de llegada: ' + c.tolerancia_min + ' minutos.</li></ul></div>' +
     '<label class="acepto"><input type="checkbox" id="acepto"' + (S.acepto ? ' checked' : '') + '> Leí y acepto estas condiciones.</label>' +
     '<button type="button" class="btn sec" id="volver">← Cambiar horario</button></div>';
@@ -393,6 +394,11 @@ function mostrarTurno(t, recien) {
     h += (items.length ? '<div class="aviso"><b>Para tener en cuenta:</b><br>' + items.map((i) => esc(i.servicio) + ': ' + esc(i.indicaciones)).join('<br>') + '</div>' : '') +
       '<p class="aviso">Te esperamos. Tolerancia de llegada: ' + c.tolerancia_min + ' minutos. Guardá este link: <a href="' + link + '">' + esc(link) + '</a></p>';
   }
+  if (t.elegir_dia_hasta) {
+    const wa2 = waLink(c, 'Hola! Soy ' + t.cliente.nombre + '. Anulé mi turno ' + t.numero + ' y quiero elegir un nuevo día.');
+    h += '<p class="aviso"><b>Tu seña queda a favor.</b> Tenés hasta el ' + fDiaLargo(t.elegir_dia_hasta) + ' a las ' + fHora(t.elegir_dia_hasta) + ' h para elegir el nuevo día. Si no, la seña se pierde.</p>' +
+      (wa2 ? '<a class="btn wa ancho" href="' + wa2 + '" target="_blank" rel="noopener">Elegir el nuevo día por WhatsApp</a>' : '<p class="aviso">Escribinos por WhatsApp para elegirlo.</p>');
+  }
   if (t.puede_anular) h += '<button type="button" class="btn sec ancho" id="anular">Anular el turno</button>';
   h += '<a class="btn sec ancho" href="' + location.pathname + '">Pedir otro turno</a></div>';
   app.innerHTML = h;
@@ -405,9 +411,11 @@ function mostrarTurno(t, recien) {
   if ($('#anular')) $('#anular').onclick = () => confirmarAnular(t);
 }
 function confirmarAnular(t) {
+  const c = t.centro, horas = (new Date(t.inicio) - Date.now()) / 3600000;
   const texto = t.estado === 'pendiente_sena' || !t.sena_pagada ? 'Se libera el horario.'
-    : t.anula_a_tiempo ? 'Faltan más de ' + t.centro.cancelacion_horas + ' h: tu seña queda a favor para el próximo turno.'
-    : 'Faltan menos de ' + t.centro.cancelacion_horas + ' h: <b>la seña no se devuelve</b>.';
+    : t.anula_a_tiempo ? 'Faltan más de ' + c.cancelacion_horas + ' h: tu seña queda a favor' + (c.reprogramar_plazo_horas ? ' y tenés <b>' + c.reprogramar_plazo_horas + ' h para elegir el nuevo día</b>. Si no, se pierde.' : ' para el próximo turno.')
+    : horas >= c.cancelacion_horas ? 'Este turno ya se cambió de día: si lo anulás, <b>la seña no se devuelve</b>.'
+    : 'Faltan menos de ' + c.cancelacion_horas + ' h: <b>la seña no se devuelve</b>.';
   $('#modalCaja').innerHTML = '<h3 style="font-size:1.5rem">¿Anular el turno?</h3><p>' + texto + '</p><div class="opciones"><button type="button" class="btn peligro" id="si">Sí, anular</button><button type="button" class="btn sec" id="no">No</button></div><p id="merr"></p>';
   $('#modal').hidden = false;
   $('#no').onclick = () => $('#modal').hidden = true;

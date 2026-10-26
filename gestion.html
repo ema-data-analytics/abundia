@@ -306,6 +306,9 @@ function msgWA(t, tipo) {
   if (tipo === 'recordatorio') return 'Hola ' + nom + '! Te recordamos tu turno en ' + (c.nombre || 'Abundia') + ' el ' + cuando + '. Tolerancia de llegada: ' + (c.tolerancia_min || 10) + ' minutos. Si no podés venir avisanos con tiempo. ' + link;
   return 'Hola ' + nom + '! Tu turno del ' + cuando + ' está confirmado. Te esperamos. ' + link;
 }
+const puedeDiaNuevo = (t) => (t.estado === 'cancelado_por_centro' || (t.estado === 'cancelado_a_tiempo' && (!t.sena_favor_vence_at || new Date(t.sena_favor_vence_at) > new Date())))
+  && t.sena_pagada && !t.sena_perdida;
+const vezVeces = (n) => n + (n === 1 ? ' vez' : ' veces');
 function accionesTurno(t) {
   const b = [], cel = t.cliente.celular;
   const W = (tipo, txt) => cel ? '<a class="btn wa chico" target="_blank" rel="noopener" href="' + wa(cel, msgWA(t, tipo)) + '">' + txt + '</a>' : '';
@@ -315,6 +318,7 @@ function accionesTurno(t) {
   if (['confirmado', 'en_curso'].includes(t.estado)) b.push('<button class="btn chico" data-a="cobrar">Cobrar</button>');
   if (t.estado === 'confirmado') b.push(W('recordatorio', 'Recordar'), W('confirmado', 'Avisar confirmado'));
   if (['pendiente_sena', 'sena_a_verificar', 'confirmado'].includes(t.estado)) b.push('<button class="btn sec chico" data-a="reprogramar">Reprogramar</button>', '<button class="btn sec chico" data-a="cancelar">Cancelar</button>');
+  if (puedeDiaNuevo(t)) b.push('<button class="btn chico" data-a="reprogramar">Elegir día nuevo</button>');
   if (t.estado === 'confirmado') b.push('<button class="btn sec chico" data-a="ausente">No vino</button>');
   if (t.estado === 'ausente' && YO.es_admin) b.push('<button class="btn sec chico" data-a="deshacer">Deshacer ausente</button>');
   b.push('<button class="btn sec chico" data-a="nota">Nota</button>');
@@ -337,7 +341,10 @@ function turnoHtml(t, conFecha) {
     '<div class="fila entre"><span>Total <b>' + plata(t.total) + '</b>' + (sena ? ' · <span class="muted">' + sena + '</span>' : '') + (aFavorExtra(t) > 0 ? ' · <span class="chip ok">a favor ' + plata(aFavorExtra(t)) + '</span>' : '') + '</span>' +
     (t.venta ? '<span class="muted">Venta ' + esc(t.venta) + '</span>' : '') + '</div>' +
     (t.nota_clienta ? '<p class="muted">Nota de la clienta: ' + esc(t.nota_clienta) + '</p>' : '') + (t.nota_interna ? '<p class="aviso">' + esc(t.nota_interna) + '</p>' : '') +
-    (t.motivo_cancelacion ? '<p class="muted">' + esc(t.motivo_cancelacion) + '</p>' : '') + accionesTurno(t) + '</article>';
+    (t.motivo_cancelacion ? '<p class="muted">' + esc(t.motivo_cancelacion) + '</p>' : '') +
+    (t.reprogramaciones > 0 && !/cancelado|vencido|rechazado|reprogramado/.test(t.estado) ? '<p class="muted">La clienta ya lo cambió ' + vezVeces(t.reprogramaciones) + '.</p>' : '') +
+    (puedeDiaNuevo(t) ? '<p class="aviso">Seña a favor' + (t.estado === 'cancelado_a_tiempo' && t.sena_favor_vence_at ? ' hasta el ' + fCorta(t.sena_favor_vence_at) + ' h' : '') + ': tocá "Elegir día nuevo" cuando la clienta lo elija.</p>' : '') +
+    accionesTurno(t) + '</article>';
 }
 let AG = null, MODO_AG = 'dia';
 // Botones "Día" / "Semana" arriba de la agenda
@@ -419,7 +426,11 @@ async function accion(a, t, btn) {
   if (a === 'rechazar') return conMotivo('Rechazar la seña', 'El turno se cae y el horario queda libre.', 'turno_sena_rechazada', (c) => ({ p_turno: t.id, p_motivo: $('#mot', c).value }));
   if (a === 'cancelar') {
     const horas = (new Date(t.inicio) - Date.now()) / 3600000, h = (CENTRO && CENTRO.cancelacion_horas) || 24;
-    const regla = !t.sena_pagada ? 'No pagó seña: el horario se libera.' : horas >= h ? 'Faltan más de ' + h + ' h: la seña queda a favor de la clienta.' : 'Faltan menos de ' + h + ' h: si avisó la clienta, <b>pierde la seña</b>. Si cancela el centro, la seña queda a favor.';
+    const C0 = CENTRO || {}, ya = t.reprogramaciones >= Math.max(C0.reprogramar_max || 1, 1) && C0.reprogramado_pierde_sena !== false;
+    const regla = !t.sena_pagada ? 'No pagó seña: el horario se libera.'
+      : horas < h ? 'Faltan menos de ' + h + ' h: si avisó la clienta, <b>pierde la seña</b>. Si cancela el centro, la seña queda a favor.'
+      : ya ? 'La clienta ya cambió este turno: si lo anula, <b>pierde la seña</b> aunque falten más de ' + h + ' h. Si cancela el centro, la seña queda a favor.'
+      : 'Faltan más de ' + h + ' h: la seña queda a favor de la clienta' + (C0.reprogramar_plazo_horas ? ', que tiene <b>' + C0.reprogramar_plazo_horas + ' h para elegir el día nuevo</b> (si no, la pierde)' : '') + '. Si cancela el centro, queda a favor sin plazo.';
     return conMotivo('Cancelar el turno', regla, 'turno_cancelar', (c) => ({ p_turno: t.id, p_quien: $('input[name=quien]:checked', c).value, p_motivo: $('#mot', c).value }),
       '<label class="check"><input type="radio" name="quien" value="clienta" checked> Avisó la clienta</label><label class="check"><input type="radio" name="quien" value="centro"> Cancela el centro (falta la profesional, imprevisto)</label>');
   }
@@ -485,16 +496,22 @@ async function elegirHorarios(cont, lineas, fecha, alElegir, turnoId) {
 }
 async function reprogramar(t) {
   const servs = await rpc('gestion_servicios');
-  const lineas = t.items.filter((i) => i.estado !== 'cancelado').map((i) => ({ servicio_id: i.servicio_id, profesional_id: i.profesional_id, cantidad: i.cantidad, nombre: i.servicio + ' · ' + i.profesional,
+  const lineas = t.items.filter((i) => /cancelado/.test(t.estado) || i.estado !== 'cancelado').map((i) => ({ servicio_id: i.servicio_id, profesional_id: i.profesional_id, cantidad: i.cantidad, nombre: i.servicio + ' · ' + i.profesional,
     duracion: (servs.find((s) => s.id === i.servicio_id) || {}).duracion_min || 30, inicio: null }));
   let fecha = t.inicio ? diaISO(t.inicio) : FECHA;
-  const c = modal('<h3>Reprogramar · ' + esc(t.cliente.nombre) + '</h3><p class="muted">La seña pasa al turno nuevo.</p><div class="campo"><label for="rf">Día</label><input type="date" id="rf" value="' + fecha + '"></div><div id="rh"></div>' +
+  if (/cancelado/.test(t.estado)) fecha = FECHA < hoyISO() ? hoyISO() : FECHA;
+  const C0 = CENTRO || {}, maxV = C0.reprogramar_max ?? 1, hh = C0.cancelacion_horas || 24, porCentro = t.estado === 'cancelado_por_centro';
+  const quien = porCentro ? '' : '<div class="campo"><span class="lbl">¿Quién pide el cambio?</span>' +
+    '<label class="check"><input type="radio" name="rq" value="clienta" checked><span><b>La clienta</b><br><span class="muted">Con ' + hh + ' h o más de aviso, hasta ' + vezVeces(maxV) + '. ' + (t.reprogramaciones ? 'Ya lo cambió ' + vezVeces(t.reprogramaciones) + '.' : 'Todavía no lo cambió.') + '</span></span></label>' +
+    '<label class="check"><input type="radio" name="rq" value="centro"><span><b>Lo cambia el centro</b><br><span class="muted">Falta la profesional o un imprevisto: no cuenta.</span></span></label></div>';
+  const c = modal('<h3>' + (/cancelado/.test(t.estado) ? 'Elegir día nuevo' : 'Reprogramar') + ' · ' + esc(t.cliente.nombre) + '</h3><p class="muted">La seña pasa al turno nuevo.</p>' + quien + '<div class="campo"><label for="rf">Día</label><input type="date" id="rf" value="' + fecha + '"></div><div id="rh"></div>' +
     '<div class="campo"><label for="mot">Motivo</label><input id="mot" value="Pidió cambiar el horario"></div><div class="fila"><button class="btn" id="ok" disabled>Reprogramar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
   const listo = () => { $('#ok', c).disabled = !lineas.every((l) => l.inicio); };
   $('#rf', c).onchange = (e) => { fecha = e.target.value; lineas.forEach((l) => l.inicio = null); listo(); elegirHorarios($('#rh', c), lineas, fecha, listo, t.id); };
   elegirHorarios($('#rh', c), lineas, fecha, listo, t.id);
   $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
-    try { await rpc('turno_reprogramar', { p_turno: t.id, p_items: lineas.map((l) => ({ servicio_id: l.servicio_id, profesional_id: l.profesional_id, cantidad: l.cantidad, inicio: l.inicio })), p_motivo: $('#mot', c).value });
+    try { await rpc('turno_cambiar_dia', { p_turno: t.id, p_items: lineas.map((l) => ({ servicio_id: l.servicio_id, profesional_id: l.profesional_id, cantidad: l.cantidad, inicio: l.inicio })), p_motivo: $('#mot', c).value,
+        p_quien: porCentro ? 'centro' : $('input[name=rq]:checked', c).value });
       FECHA = diaISO(lineas[0].inicio); cerrarModal(); mostrar('agenda'); } catch (e) { errorEn($('#err', c), e); }
   });
 }
@@ -819,7 +836,10 @@ async function aConfig(sv) {
     '<section class="card"><h3>Reglas de los turnos</h3><div class="grilla">' + num('c1', 'Seña %', t.sena_pct) + num('c2', 'Minutos para pagar la seña', t.plazo_sena_min) + num('c3', 'Horas para anular sin perder la seña', t.cancelacion_horas) +
     num('c4', 'Tolerancia de llegada (min)', t.tolerancia_min) + num('c5', 'Anticipación mínima para reservar (min)', t.anticipacion_min_minutos) + num('c6', 'Se puede reservar hasta (días)', t.reserva_max_dias) +
     '<div class="campo"><label for="c7">Horarios cada</label><select id="c7"' + (ed ? '' : ' disabled') + '>' + [5, 10, 15, 20, 30, 60].map((m) => '<option' + (m === t.intervalo_slots_min ? ' selected' : '') + ' value="' + m + '">' + m + ' min</option>').join('') + '</select></div>' +
-    num('c8', 'Turnos esperando seña por clienta', t.max_pendientes_por_celular) + '</div>' +
+    num('c8', 'Turnos esperando seña por clienta', t.max_pendientes_por_celular) +
+    num('c11', 'Veces que la clienta puede cambiar un turno', t.reprogramar_max, ' min="0" max="5"') +
+    num('c12', 'Si anula a tiempo: horas para elegir el día nuevo (vacío = sin límite)', t.reprogramar_plazo_horas, ' min="1" max="720"') + '</div>' +
+    '<label class="check"><input type="checkbox" id="c13"' + (t.reprogramado_pierde_sena ? ' checked' : '') + (ed ? '' : ' disabled') + '> Si anula un turno que ya cambió, pierde la seña</label>' +
     '<label class="check"><input type="checkbox" id="c9"' + (t.permite_elegir_profesional ? ' checked' : '') + (ed ? '' : ' disabled') + '> La clienta elige profesional</label>' +
     '<label class="check"><input type="checkbox" id="c10"' + (t.permite_simultaneos ? ' checked' : '') + (ed ? '' : ' disabled') + '> Permitir servicios al mismo tiempo (con dos profesionales)</label></section>' +
     '<section class="card"><h3>Datos del centro</h3><div class="grilla">' + txt('e1', 'Nombre', e.nombre_fantasia) + txt('e2', 'WhatsApp del centro', (e.whatsapp || '').replace('+549', ''), '387 5123456') + txt('e3', 'Dirección', e.direccion) + txt('e4', 'Instagram', e.instagram, '@abundia') + '</div></section>' +
@@ -828,7 +848,8 @@ async function aConfig(sv) {
   if (!ed) return;
   $('#ok').onclick = () => conBoton($('#ok'), async () => {
     const p = { turnos: { sena_pct: +$('#c1').value, plazo_sena_min: +$('#c2').value, cancelacion_horas: +$('#c3').value, tolerancia_min: +$('#c4').value, anticipacion_min_minutos: +$('#c5').value,
-      reserva_max_dias: +$('#c6').value, intervalo_slots_min: +$('#c7').value, max_pendientes_por_celular: +$('#c8').value, permite_elegir_profesional: $('#c9').checked, permite_simultaneos: $('#c10').checked },
+      reserva_max_dias: +$('#c6').value, intervalo_slots_min: +$('#c7').value, max_pendientes_por_celular: +$('#c8').value, permite_elegir_profesional: $('#c9').checked, permite_simultaneos: $('#c10').checked,
+      reprogramar_max: +$('#c11').value, reprogramar_plazo_horas: $('#c12').value.trim(), reprogramado_pierde_sena: $('#c13').checked },
       empresa: { nombre_fantasia: $('#e1').value, whatsapp: $('#e2').value, direccion: $('#e3').value, instagram: $('#e4').value },
       cuenta_sena: { nombre: $('#s1').value, banco: $('#s2').value, alias: $('#s3').value } };
     try { await rpc('config_guardar', { p }); CENTRO = null; $('#err').innerHTML = '<p class="aviso ok">Configuración guardada.</p>'; } catch (er) { errorEn($('#err'), er); }
