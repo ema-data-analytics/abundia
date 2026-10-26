@@ -596,10 +596,12 @@ async function vNuevo(el) {
 // =============================================================== Caja
 let MODO_CAJA = 'caja';
 const modoCajaHtml = () => '<div class="sub" id="modoCaja" role="group" aria-label="Ver"><button type="button" data-mc="caja" aria-pressed="' + (MODO_CAJA === 'caja') + '">Caja</button>' +
-  '<button type="button" data-mc="comisiones" aria-pressed="' + (MODO_CAJA === 'comisiones') + '">Comisiones</button></div>';
+  '<button type="button" data-mc="comisiones" aria-pressed="' + (MODO_CAJA === 'comisiones') + '">Comisiones</button>' +
+  '<button type="button" data-mc="gastos" aria-pressed="' + (MODO_CAJA === 'gastos') + '">Gastos</button></div>';
 function engancharModoCaja(el) { $$('#modoCaja button', el).forEach((b) => b.onclick = () => { MODO_CAJA = b.dataset.mc; mostrar('caja'); }); }
 async function vCaja(el) {
   if (MODO_CAJA === 'comisiones') return vComisiones(el);
+  if (MODO_CAJA === 'gastos') return vGastos(el);
   const c = await rpc('panel_caja');
   if (!c.abierta) {
     el.innerHTML = '<div class="vista">' + modoCajaHtml() + '<h2>Caja</h2><section class="card"><p>La caja está <b>cerrada</b>.' + (c.ultima ? ' Última: ' + fFecha(c.ultima.fecha) + ' (' + esc(c.ultima.estado) + ').' : '') + '</p>' +
@@ -681,6 +683,61 @@ async function verLiq(id, el) {
       try { await rpc('liquidacion_anular', { p_liq: id, p_motivo: $('#lmo', m).value }); await vComisiones(el); verLiq(id, el); } catch (er) { errorEn($('#err3', m), er); }
     });
   };
+}
+
+// =============================================================== Gastos (dentro de Caja)
+let MES_GASTOS = null;
+async function vGastos(el) {
+  const hoy = hoyISO(); MES_GASTOS = MES_GASTOS || hoy.slice(0, 7);
+  const desde = MES_GASTOS + '-01', fin = new Date(Date.UTC(+MES_GASTOS.slice(0, 4), +MES_GASTOS.slice(5, 7), 0)).toISOString().slice(0, 10);
+  const [cs, m] = await Promise.all([rpc('gastos_conceptos'), rpc('gastos_mes', { p_desde: desde, p_hasta: fin < hoy ? fin : (desde > hoy ? fin : hoy) })]);
+  const tipos = [...new Set(cs.map((c) => c.tipo))];
+  el.innerHTML = '<div class="vista">' + modoCajaHtml() + '<h2>Gastos</h2>' +
+    '<section class="card"><h3>Cargar un gasto</h3><div class="grilla">' +
+    '<div class="campo"><label for="gf">Fecha</label><input type="date" id="gf" value="' + hoy + '" max="' + hoy + '"></div>' +
+    '<div class="campo"><label for="gc">Concepto</label><select id="gc"><option value="">Elegí…</option>' + tipos.map((t) => '<optgroup label="' + esc(t) + '">' +
+      cs.filter((c) => c.tipo === t).map((c) => '<option value="' + c.id + '">' + esc(c.nombre) + '</option>').join('') + '</optgroup>').join('') + '</select></div>' +
+    '<div class="campo"><label for="gi">Importe</label><input id="gi" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ej.: 25000"></div>' +
+    '<div class="campo"><label for="gd">Detalle <span>(opcional)</span></label><input id="gd" maxlength="200" placeholder="Ej.: luz de octubre"></div></div>' +
+    '<button type="button" class="btn sec chico" id="gnc">+ Otro concepto</button>' +
+    '<div class="campo"><span class="lbl">¿Cómo se pagó?</span><label class="check"><input type="radio" name="gm" value="1" checked><span><b>Efectivo</b><br><span class="muted">Sale de la caja (tiene que estar abierta).</span></span></label>' +
+    '<label class="check"><input type="radio" name="gm" value="2"><span><b>Transferencia</b><br><span class="muted">Sale de la cuenta del centro.</span></span></label></div>' +
+    '<button class="btn" id="gok">Guardar gasto</button><div id="gerr"></div></section>' +
+    '<section class="card"><div class="fila entre"><h3>Gastos del mes</h3><input type="month" id="gmes" value="' + MES_GASTOS + '" max="' + hoy.slice(0, 7) + '" class="btn sec chico" aria-label="Mes"></div>' +
+    '<p class="total">Total ' + plata(m.total) + '</p>' +
+    (m.por_tipo.length ? '<div class="lista">' + m.por_tipo.map((t) => '<div class="item"><span>' + esc(t.tipo) + '</span><b>' + plata(t.total) + '</b></div>').join('') + '</div>' : '') +
+    '<div class="lista">' + (m.gastos.length ? m.gastos.map((g) => '<div class="item"><span><b>' + fFecha(g.fecha).slice(0, 5) + '</b> · ' + esc(g.descripcion) +
+      '<br><span class="muted">' + esc(g.concepto || '') + ' · ' + esc(g.medio) + ' · ' + esc(g.numero) + (g.estado === 'anulado' ? ' · anulado: ' + esc(g.motivo_anulacion) : '') + '</span></span>' +
+      '<span class="fila"><b' + (g.estado === 'anulado' ? ' style="text-decoration:line-through;opacity:.6"' : '') + '>' + plata(g.total) + '</b>' +
+      (g.estado !== 'registrado' ? '<span class="chip mal">Anulado</span>' : g.se_anula_desde === 'comisiones' ? '<span class="chip">Comisión</span>' : g.se_anula_desde === 'cobro' ? '<span class="chip">Automático</span>'
+        : '<button class="btn sec chico" data-ga="' + g.id + '">Anular</button>') + '</span></div>').join('') : '<p class="muted">No hay gastos este mes.</p>') + '</div></section></div>';
+  engancharModoCaja(el);
+  $('#gmes').onchange = (e) => { if (e.target.value) { MES_GASTOS = e.target.value; vGastos(el); } };
+  $('#gok').onclick = () => conBoton($('#gok'), async () => {
+    try {
+      const g = await rpc('gasto_cargar', { p: { fecha: $('#gf').value, concepto_id: $('#gc').value, importe: $('#gi').value, detalle: $('#gd').value, medio_pago_id: +$('input[name=gm]:checked').value } });
+      MES_GASTOS = g.fecha.slice(0, 7); await vGastos(el);
+      $('#gerr').innerHTML = '<p class="aviso ok" role="status">Gasto ' + esc(g.numero) + ' guardado: ' + esc(g.descripcion) + ' · ' + plata(g.total) + '.</p>';
+    } catch (e) { errorEn($('#gerr'), e); }
+  });
+  $('#gnc').onclick = () => {
+    const c = modal('<h3>Otro concepto</h3><div class="campo"><label for="nt">Tipo</label><input id="nt" list="ntl" placeholder="Ej.: Insumos"><datalist id="ntl">' + tipos.map((t) => '<option value="' + esc(t) + '">').join('') + '</datalist></div>' +
+      '<div class="campo"><label for="nn2">Nombre</label><input id="nn2" placeholder="Ej.: Toallas descartables"></div><div class="fila"><button class="btn" id="ok">Agregar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+    $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+      try { const n = await rpc('gasto_concepto_crear', { p_tipo: $('#nt', c).value, p_nombre: $('#nn2', c).value });
+        const guardado = { f: $('#gf').value, i: $('#gi').value, d: $('#gd').value, m: $('input[name=gm]:checked').value };
+        cerrarModal(); await vGastos(el); $('#gf').value = guardado.f; $('#gi').value = guardado.i; $('#gd').value = guardado.d; $('input[name=gm][value="' + guardado.m + '"]').checked = true; $('#gc').value = String(n.id);
+      } catch (e) { errorEn($('#err', c), e); }
+    });
+  };
+  $$('[data-ga]', el).forEach((b) => b.onclick = () => {
+    const g = m.gastos.find((x) => x.id === +b.dataset.ga);
+    const c = modal('<h3>Anular ' + esc(g.numero) + '</h3><p>' + esc(g.descripcion) + ' · ' + plata(g.total) + '. La plata vuelve ' + (g.medio === 'Efectivo' ? 'a la caja (tiene que estar abierta)' : 'a la cuenta') + '.</p>' +
+      '<div class="campo"><label for="gmo">Motivo</label><input id="gmo"></div><div class="fila"><button class="btn peligro" id="ok">Anular</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+    $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+      try { await rpc('gasto_anular', { p_gasto: g.id, p_motivo: $('#gmo', c).value }); cerrarModal(); await vGastos(el); } catch (e) { errorEn($('#err', c), e); }
+    });
+  });
 }
 
 // =============================================================== Clientas
