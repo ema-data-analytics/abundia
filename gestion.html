@@ -43,6 +43,7 @@ nav.tabs button[aria-current="page"] { border-bottom-color: var(--oro); opacity:
 main { padding-block: 16px 60px }
 .vista { display: grid; gap: 14px }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px }
+.vista > *, .card > * { min-width: 0 }
 .fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap }
 .entre { justify-content: space-between }
 .muted { color: var(--muted); font-size: .88rem }
@@ -593,22 +594,29 @@ async function vNuevo(el) {
 }
 
 // =============================================================== Caja
+let MODO_CAJA = 'caja';
+const modoCajaHtml = () => '<div class="sub" id="modoCaja" role="group" aria-label="Ver"><button type="button" data-mc="caja" aria-pressed="' + (MODO_CAJA === 'caja') + '">Caja</button>' +
+  '<button type="button" data-mc="comisiones" aria-pressed="' + (MODO_CAJA === 'comisiones') + '">Comisiones</button></div>';
+function engancharModoCaja(el) { $$('#modoCaja button', el).forEach((b) => b.onclick = () => { MODO_CAJA = b.dataset.mc; mostrar('caja'); }); }
 async function vCaja(el) {
+  if (MODO_CAJA === 'comisiones') return vComisiones(el);
   const c = await rpc('panel_caja');
   if (!c.abierta) {
-    el.innerHTML = '<div class="vista"><h2>Caja</h2><section class="card"><p>La caja está <b>cerrada</b>.' + (c.ultima ? ' Última: ' + fFecha(c.ultima.fecha) + ' (' + esc(c.ultima.estado) + ').' : '') + '</p>' +
+    el.innerHTML = '<div class="vista">' + modoCajaHtml() + '<h2>Caja</h2><section class="card"><p>La caja está <b>cerrada</b>.' + (c.ultima ? ' Última: ' + fFecha(c.ultima.fecha) + ' (' + esc(c.ultima.estado) + ').' : '') + '</p>' +
       '<div class="campo"><label for="si">Efectivo con el que arrancás</label><input id="si" type="number" min="0" step="0.01" inputmode="decimal" value="0"></div><button class="btn" id="ab">Abrir caja</button><div id="err"></div></section>' +
       '<p class="muted">Las señas por transferencia se pueden registrar aunque la caja esté cerrada. Para cobrar, abrí la caja. Se puede abrir y cerrar varias veces en el día (por ejemplo, mañana y tarde).</p></div>';
+    engancharModoCaja(el);
     $('#ab').onclick = () => conBoton($('#ab'), async () => { try { await rpc('abrir_caja', { p_saldo_inicial: +$('#si').value || 0 }); mostrar('caja'); } catch (e) { errorEn($('#err'), e); } });
     return;
   }
   const res = c.resumen || [];
-  el.innerHTML = '<div class="vista"><h2>Caja abierta · ' + fFecha(c.fecha) + '</h2><section class="card"><table class="tabla"><tr><th>Medio</th><th class="n">Entró</th><th class="n">Salió</th><th class="n">Hay</th></tr>' +
+  el.innerHTML = '<div class="vista">' + modoCajaHtml() + '<h2>Caja abierta · ' + fFecha(c.fecha) + '</h2><section class="card"><table class="tabla"><tr><th>Medio</th><th class="n">Entró</th><th class="n">Salió</th><th class="n">Hay</th></tr>' +
     res.map((r) => '<tr><td>' + esc(r.medio) + '</td><td class="n">' + plata(r.ingresos) + '</td><td class="n">' + plata(r.egresos) + '</td><td class="n"><b>' + plata(r.saldo) + '</b></td></tr>').join('') + '</table></section>' +
     '<section class="card"><h3>Cerrar la caja</h3><p class="muted">Contá lo que hay y cargalo. Si no coincide, queda registrada la diferencia.</p>' +
     res.map((r) => '<div class="campo"><label for="ct' + r.medio_pago_id + '">' + esc(r.medio) + ' contado</label><input id="ct' + r.medio_pago_id + '" data-m="' + r.medio_pago_id + '" type="number" step="0.01" inputmode="decimal" placeholder="Contá y escribí cuánto hay"></div>').join('') +
     '<div class="campo"><label for="ob">Observaciones</label><input id="ob"></div><button class="btn" id="ce">Cerrar caja</button><div id="err"></div></section>' +
     '<section class="card"><h3>Movimientos</h3><table class="tabla">' + (c.movimientos || []).map((m) => '<tr><td>' + fHora(m.fecha) + '</td><td>' + esc(m.descripcion) + '<br><span class="muted">' + esc(m.medio) + '</span></td><td class="n">' + (m.tipo === 'egreso' ? '− ' : '') + plata(m.importe) + '</td></tr>').join('') + '</table></section></div>';
+  engancharModoCaja(el);
   $('#ce').onclick = () => conBoton($('#ce'), async () => {
     if ($$('[data-m]').some((i) => i.value.trim() === '')) { errorEn($('#err'), new Error('Contá y escribí cuánto hay de cada medio. Si no hay nada, poné 0.')); return; }
     try { const r = await rpc('cerrar_caja', { p_caja: c.id, p_contado: $$('[data-m]').map((i) => ({ medio_pago_id: +i.dataset.m, importe: +i.value })), p_observaciones: $('#ob').value || null });
@@ -616,6 +624,63 @@ async function vCaja(el) {
       $('#fin', m).onclick = () => { cerrarModal(); mostrar('caja'); };
     } catch (e) { errorEn($('#err'), e); }
   });
+}
+
+// =============================================================== Comisiones (dentro de Caja)
+const ESTLIQ = { confirmada: ['Para pagar', ''], pagada: ['Pagada', 'ok'], anulada: ['Anulada', 'mal'] };
+const periodo = (d, h) => fFecha(d).slice(0, 5) + ' al ' + fFecha(h).slice(0, 5);
+function tablaLiq(items) {
+  return '<div style="overflow-x:auto"><table class="tabla"><tr><th>Día</th><th>Clienta · servicio</th><th class="n">Cobrado</th><th class="n">Comisión</th></tr>' +
+    items.map((i) => '<tr><td>' + fFecha(i.fecha).slice(0, 5) + '</td><td>' + esc(i.clienta) + '<br><span class="muted">' + esc(i.servicio) + (i.cantidad > 1 ? ' · ' + i.cantidad + ' zonas' : '') + (i.regla ? ' · ' + esc(i.regla) : '') + '</span></td>' +
+      '<td class="n">' + plata(i.base) + '</td><td class="n"><b>' + plata(i.comision) + '</b></td></tr>').join('') + '</table></div>';
+}
+async function vComisiones(el) {
+  const [profs, liqs] = await Promise.all([rpc('profesionales_listar'), rpc('liquidaciones_listar')]);
+  const conCom = profs.filter((p) => p.estado === 'activa' && p.servicios.some((s) => s.comision_tipo !== 'ninguna'));
+  const hoy = hoyISO(), inicioMes = hoy.slice(0, 8) + '01';
+  el.innerHTML = '<div class="vista">' + modoCajaHtml() + '<h2>Comisiones</h2>' +
+    '<section class="card"><h3>Liquidar</h3>' + (conCom.length ? '' : '<p class="aviso">Ninguna profesional tiene comisión cargada. Se carga en Ajustes → Profesionales.</p>') +
+    '<div class="grilla"><div class="campo"><label for="lp">Profesional</label><select id="lp">' + (conCom.length ? conCom : profs.filter((p) => p.estado === 'activa')).map((p) => '<option value="' + p.id + '">' + esc(p.nombre) + '</option>').join('') + '</select></div>' +
+    '<div class="campo"><label for="ld">Desde</label><input type="date" id="ld" value="' + inicioMes + '"></div><div class="campo"><label for="lh">Hasta</label><input type="date" id="lh" value="' + hoy + '"></div></div>' +
+    '<button class="btn" id="lc">Ver cuánto le toca</button><div id="lres"></div></section>' +
+    '<section class="card"><h3>Liquidaciones</h3><div class="lista">' + (liqs.length ? liqs.map((l) => '<div class="item"><span><b>' + esc(l.numero) + '</b> · ' + esc(l.profesional) + '<br><span class="muted">' + periodo(l.desde, l.hasta) + ' · ' + (l.servicios === 1 ? '1 servicio' : l.servicios + ' servicios') + '</span></span>' +
+      '<span class="fila"><b>' + plata(l.total) + '</b><span class="chip ' + ESTLIQ[l.estado][1] + '">' + ESTLIQ[l.estado][0] + '</span><button class="btn sec chico" data-ver="' + l.id + '">Ver</button></span></div>').join('')
+      : '<p class="muted">Todavía no hay liquidaciones.</p>') + '</div></section><div id="err"></div></div>';
+  engancharModoCaja(el);
+  $('#lc').onclick = () => conBoton($('#lc'), async () => {
+    try {
+      const c = await rpc('liquidacion_calcular', { p_profesional: +$('#lp').value, p_desde: $('#ld').value, p_hasta: $('#lh').value });
+      $('#lres').innerHTML = !c.cantidad ? '<p class="muted">No hay servicios cobrados con comisión en esas fechas (o ya están liquidados).</p>'
+        : '<p>' + esc(c.profesional) + ' · ' + periodo(c.desde, c.hasta) + ': <b>' + (c.cantidad === 1 ? '1 servicio' : c.cantidad + ' servicios') + '</b>, cobrado ' + plata(c.cobrado) + '.</p>' + tablaLiq(c.items) +
+          '<p class="total">Le toca ' + plata(c.total) + '</p><button class="btn ok" id="lg">Guardar liquidación</button><p class="muted">Al guardarla te muestra para pagarla (ahora o más tarde, desde la lista de abajo).</p>';
+      if ($('#lg')) $('#lg').onclick = () => conBoton($('#lg'), async () => {
+        try { const l = await rpc('liquidacion_crear', { p_profesional: +$('#lp').value, p_desde: $('#ld').value, p_hasta: $('#lh').value }); await vComisiones(el); verLiq(l.id, el); }
+        catch (e) { errorEn($('#lres'), e); }
+      });
+    } catch (e) { errorEn($('#lres'), e); }
+  });
+  $$('[data-ver]', el).forEach((b) => b.onclick = () => verLiq(+b.dataset.ver, el));
+}
+async function verLiq(id, el) {
+  const l = await rpc('liquidacion_ver', { p_liq: id }), e = ESTLIQ[l.estado];
+  const c = modal('<h3>' + esc(l.numero) + ' · ' + esc(l.profesional) + '</h3><p>' + periodo(l.desde, l.hasta) + ' · <span class="chip ' + e[1] + '">' + e[0] + '</span></p>' +
+    (l.estado === 'pagada' ? '<p class="aviso ok">Pagada el ' + fFecha(l.pagada_el) + ' en ' + esc(l.pagada_con).toLowerCase() + ' (gasto ' + esc(l.gasto) + ').</p>' : '') +
+    (l.estado === 'anulada' ? '<p class="aviso">Anulada: ' + esc(l.motivo_anulacion) + '</p>' : '') +
+    tablaLiq(l.items) + '<p class="total">Total ' + plata(l.total) + '</p>' +
+    (l.estado === 'confirmada' ? '<div class="campo"><span class="lbl">¿Cómo le pagás?</span><label class="check"><input type="radio" name="lm" value="1" checked><span><b>Efectivo</b><br><span class="muted">Sale de la caja (tiene que estar abierta).</span></span></label>' +
+      '<label class="check"><input type="radio" name="lm" value="2"><span><b>Transferencia</b><br><span class="muted">Sale de la cuenta del centro.</span></span></label></div>' : '') +
+    '<div class="fila">' + (l.estado === 'confirmada' ? '<button class="btn ok" id="lpg">Pagar ' + plata(l.total) + '</button>' : '') +
+    (l.estado !== 'anulada' ? '<button class="btn sec" id="lan">Anular</button>' : '') + '<button class="btn sec" onclick="cerrarModal()">Cerrar</button></div><div id="err2"></div>');
+  if ($('#lpg', c)) $('#lpg', c).onclick = () => conBoton($('#lpg', c), async () => {
+    try { await rpc('liquidacion_pagar', { p_liq: id, p_medio: +$('input[name=lm]:checked', c).value }); await vComisiones(el); verLiq(id, el); } catch (er) { errorEn($('#err2', c), er); }
+  });
+  if ($('#lan', c)) $('#lan', c).onclick = () => {
+    const m = modal('<h3>Anular ' + esc(l.numero) + '</h3><p>' + (l.estado === 'pagada' ? 'El pago se anula: la plata vuelve a la caja o a la cuenta.' : 'No se pagó todavía.') + ' Los servicios quedan libres para volver a liquidarlos.</p>' +
+      '<div class="campo"><label for="lmo">Motivo</label><input id="lmo"></div><div class="fila"><button class="btn peligro" id="lok">Anular</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err3"></div>');
+    $('#lok', m).onclick = () => conBoton($('#lok', m), async () => {
+      try { await rpc('liquidacion_anular', { p_liq: id, p_motivo: $('#lmo', m).value }); await vComisiones(el); verLiq(id, el); } catch (er) { errorEn($('#err3', m), er); }
+    });
+  };
 }
 
 // =============================================================== Clientas
