@@ -95,6 +95,20 @@ i.e1 { background: var(--marca) } i.e2 { background: var(--oro-claro) } i.e3 { b
 .sub { display: flex; gap: 6px; flex-wrap: wrap }
 .sub button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px }
 .sub button[aria-pressed="true"] { background: var(--marca); color: var(--oro-claro); border-color: var(--marca) }
+.leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .9rem }
+.leyenda i, .sem-t .serv i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: middle; flex: none }
+.sem-dia h3 { font-size: 1.2rem } .sem-dia h3 .chip { font-family: var(--f-body); vertical-align: middle }
+.sem-dia.es-hoy { border-color: var(--marca); box-shadow: 0 0 0 1px var(--marca) inset }
+.sem-cerrado { display: flex; gap: 10px; align-items: baseline; padding: 4px 14px; color: var(--muted) }
+.sem-lista { display: grid; gap: 6px }
+.sem-t { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; text-align: left; width: 100%; border: 1px solid var(--line);
+  border-left: 5px solid var(--oro); border-radius: 10px; background: var(--surface); padding: 8px 10px; min-height: 44px }
+.sem-t .hora { font-weight: 700; font-variant-numeric: tabular-nums }
+.sem-t .quien { display: grid; gap: 2px; min-width: 0 } .sem-t .quien b { overflow-wrap: anywhere }
+.sem-t .serv { font-size: .86rem; color: var(--muted); overflow-wrap: anywhere }
+.sem-t.pendiente_sena, .sem-t.sena_a_verificar { border-left-color: #c9a227 } .sem-t.confirmado { border-left-color: var(--info) }
+.sem-t.en_curso { border-left-color: var(--ok) } .sem-t.terminado { border-left-color: #9aa39c } .sem-t.ausente { border-left-color: var(--alerta); opacity: .75 }
+@media (max-width: 480px) { .sem-t { grid-template-columns: 46px minmax(0, 1fr) } .sem-t .chip { grid-column: 2; justify-self: start } }
 .franjas { display: grid; gap: 6px }
 .franja { display: grid; grid-template-columns: 90px 1fr 1fr 1fr 1fr; gap: 6px; align-items: center; font-size: .9rem }
 .franja input { padding: 7px; border: 1px solid var(--line); border-radius: 8px; min-width: 0 }
@@ -325,13 +339,47 @@ function turnoHtml(t, conFecha) {
     (t.nota_clienta ? '<p class="muted">Nota de la clienta: ' + esc(t.nota_clienta) + '</p>' : '') + (t.nota_interna ? '<p class="aviso">' + esc(t.nota_interna) + '</p>' : '') +
     (t.motivo_cancelacion ? '<p class="muted">' + esc(t.motivo_cancelacion) + '</p>' : '') + accionesTurno(t) + '</article>';
 }
-let AG = null;
+let AG = null, MODO_AG = 'dia';
+// Botones "Día" / "Semana" arriba de la agenda
+const modoAgHtml = () => '<div class="sub" id="modoAg" role="group" aria-label="Ver la agenda por"><button type="button" data-m="dia" aria-pressed="' + (MODO_AG === 'dia') + '">Día</button>' +
+  '<button type="button" data-m="semana" aria-pressed="' + (MODO_AG === 'semana') + '">Semana</button></div>';
+function engancharModoAg(el) { $$('#modoAg button', el).forEach((b) => b.onclick = () => { MODO_AG = b.dataset.m; mostrar('agenda'); }); }
+const diaMes = (iso) => +iso.slice(8, 10) + '/' + +iso.slice(5, 7);
+const nombreDia = (iso) => DIAS[new Date(iso + 'T12:00:00Z').getUTCDay() || 7];
+async function vSemana(el) {
+  const S = await rpc('agenda_semana', { p_fecha: FECHA }), hoy = hoyISO();
+  const n = S.dias.reduce((a, d) => a + d.turnos.length, 0);
+  let h = '<div class="vista">' + modoAgHtml();
+  h += '<div class="dianav"><button class="btn sec chico" id="antS" aria-label="Semana anterior">‹</button><span class="hoy">Semana del ' + diaMes(S.desde) + ' al ' + diaMes(S.hasta) + '</span>' +
+    '<button class="btn sec chico" id="hoyS">Esta semana</button><button class="btn sec chico" id="sigS" aria-label="Semana siguiente">›</button></div>';
+  h += '<p class="muted">' + (n === 1 ? '1 turno' : n + ' turnos') + ' en la semana. Tocá un turno o "Ver día" para cobrar, confirmar o cambiarlo.</p>';
+  if (S.profesionales.length) h += '<div class="leyenda">' + S.profesionales.map((p) => '<span><i style="background:' + esc(p.color) + '"></i>' + esc(p.nombre) + '</span>').join('') + '</div>';
+  h += S.dias.map((d) => {
+    const titulo = nombreDia(d.fecha) + ' ' + diaMes(d.fecha);
+    if (!d.abierto && !d.turnos.length && !d.bloqueos.length) return '<div class="sem-cerrado"><b>' + titulo + '</b><span>Cerrado</span></div>';
+    return '<section class="card sem-dia' + (d.fecha === hoy ? ' es-hoy' : '') + '" data-fecha="' + d.fecha + '"><div class="fila entre"><h3>' + titulo + (d.fecha === hoy ? ' <span class="chip info">Hoy</span>' : '') + '</h3>' +
+      '<button class="btn sec chico" data-dia="' + d.fecha + '">Ver día</button></div>' +
+      d.bloqueos.map((b) => '<p class="aviso">Bloqueado ' + fHora(b.desde) + '–' + fHora(b.hasta) + ' · ' + esc(b.motivo) + (b.profesional ? ' · ' + esc(b.profesional) : b.cabina ? ' · ' + esc(b.cabina) : ' · todo el centro') + '</p>').join('') +
+      (d.turnos.length ? '<div class="sem-lista">' + d.turnos.map((t) => '<button type="button" class="sem-t ' + t.estado + '" data-dia="' + d.fecha + '"><span class="hora">' + fHora(t.inicio) + '</span>' +
+        '<span class="quien"><b>' + esc(t.cliente) + '</b>' + t.items.map((i) => '<span class="serv"><i style="background:' + esc(i.color) + '"></i>' + esc(i.servicio) + (i.cantidad > 1 ? ' · ' + i.cantidad + ' zonas' : '') + ' · ' + esc(i.profesional) + '</span>').join('') + '</span>' +
+        '<span class="chip ' + EST[t.estado][1] + '">' + EST[t.estado][0] + '</span></button>').join('') + '</div>' : '<p class="muted">Sin turnos.</p>') + '</section>';
+  }).join('');
+  h += '<button class="btn" id="nuevoT">+ Turno nuevo</button></div>';
+  el.innerHTML = h;
+  engancharModoAg(el);
+  $('#antS').onclick = () => { FECHA = sumar(FECHA, -7); mostrar('agenda'); };
+  $('#sigS').onclick = () => { FECHA = sumar(FECHA, 7); mostrar('agenda'); };
+  $('#hoyS').onclick = () => { FECHA = hoyISO(); mostrar('agenda'); };
+  $('#nuevoT').onclick = () => mostrar('nuevo');
+  $$('[data-dia]', el).forEach((b) => b.onclick = () => { FECHA = b.dataset.dia; MODO_AG = 'dia'; mostrar('agenda'); });
+}
 async function vAgenda(el) {
+  if (MODO_AG === 'semana') return vSemana(el);
   AG = await rpc('agenda_dia', { p_fecha: FECHA });
   CENTRO = AG.centro;
   const activos = AG.turnos.filter((t) => !/cancelado|vencido|rechazado/.test(t.estado));
   const bajas = AG.turnos.filter((t) => /cancelado|vencido|rechazado/.test(t.estado));
-  let h = '<div class="vista">';
+  let h = '<div class="vista">' + modoAgHtml();
   if (!AG.caja_abierta) h += '<div class="aviso fila entre"><span>La caja está <b>cerrada</b>. Abrila para cobrar.</span><button class="btn chico" id="irCaja">Abrir caja</button></div>';
   if (!CENTRO.whatsapp || !CENTRO.alias) h += '<p class="aviso">Falta cargar ' + [!CENTRO.whatsapp && 'el WhatsApp del centro', !CENTRO.alias && 'el alias para las señas'].filter(Boolean).join(' y ') + ' (Ajustes → Configuración, lo carga el superusuario).</p>';
   if (AG.senas_pendientes.length) h += '<section class="card" style="border-color:#c9a227"><h3>Señas para controlar (' + AG.senas_pendientes.length + ')</h3><div class="lista">' + AG.senas_pendientes.map((t) => turnoHtml(t, true)).join('') + '</div></section>';
@@ -342,6 +390,7 @@ async function vAgenda(el) {
   if (bajas.length) h += '<details class="card"><summary>Anulados y vencidos (' + bajas.length + ')</summary><div class="lista" style="margin-top:10px">' + bajas.map((t) => turnoHtml(t)).join('') + '</div></details>';
   h += '<button class="btn" id="nuevoT">+ Turno nuevo</button></div>';
   el.innerHTML = h;
+  engancharModoAg(el);
   $('#ant').onclick = () => { FECHA = sumar(FECHA, -1); mostrar('agenda'); };
   $('#sig').onclick = () => { FECHA = sumar(FECHA, 1); mostrar('agenda'); };
   $('#hoy').onclick = () => { FECHA = hoyISO(); mostrar('agenda'); };
