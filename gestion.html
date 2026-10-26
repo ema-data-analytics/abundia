@@ -522,9 +522,15 @@ async function vNuevo(el) {
     try { const r = await rpc('buscar_clientas', { p_texto: q });
       $('#bcr').innerHTML = r.length ? r.map((x) => '<button type="button" class="item" data-c="' + x.id + '"><span><b>' + esc(x.nombre) + '</b> <span class="muted">' + esc((x.celular || '').replace('+549', '')) + '</span></span>' +
         '<span class="muted">' + x.turnos + ' turnos' + (x.ausencias ? ' · ' + x.ausencias + ' ausencias' : '') + (x.a_favor > 0 ? ' · a favor ' + plata(x.a_favor) : '') + '</span></button>').join('') : '<p class="muted">No está: cargala como nueva abajo.</p>';
-      $$('[data-c]', $('#bcr')).forEach((b) => b.onclick = () => { N.cliente = r.find((x) => x.id === +b.dataset.c); $('#bcr').innerHTML = ''; $('#bc').value = ''; $('#nueva').hidden = true;
-        $('#csel').innerHTML = '<span class="chip ok">' + esc(N.cliente.nombre) + '</span> <button type="button" class="btn sec chico" id="otra">Cambiar</button>'; $('#otra').onclick = () => { N.cliente = null; $('#csel').innerHTML = ''; $('#nueva').hidden = false; listo(); }; listo(); });
+      $$('[data-c]', $('#bcr')).forEach((b) => b.onclick = () => elegirCli(r.find((x) => x.id === +b.dataset.c)));
     } catch (e) { errorEn($('#bcr'), e); } }, 300); };
+  function elegirCli(x) {
+    N.cliente = x; $('#bcr').innerHTML = ''; $('#bc').value = ''; $('#nueva').hidden = true;
+    $('#csel').innerHTML = '<span class="chip ok">' + esc(x.nombre) + '</span>' + (x.confianza ? ' <span class="chip ok">De confianza</span>' : '') + ' <button type="button" class="btn sec chico" id="otra">Cambiar</button>';
+    $('#otra').onclick = () => { N.cliente = null; $('#csel').innerHTML = ''; $('#nueva').hidden = false; listo(); };
+    if (x.confianza) { $('input[name=modo][value=exenta]').checked = true; N.modo = 'exenta'; $('#mc').hidden = true; $('#me').hidden = false; if (!$('#mx').value.trim()) $('#mx').value = 'Clienta de confianza'; }
+    listo();
+  }
   const pintarDet = () => {
     $('#det').innerHTML = N.lineas.map((l, k) => { const s = servs.find((x) => x.id === l.servicio_id);
       return '<div class="item det"><b>' + esc(s.nombre) + '</b><span class="fila">' + (s.max_zonas > 1 ? '<label>Zonas <select data-z="' + k + '">' + Array.from({ length: s.max_zonas }, (_, i) => '<option' + (i + 1 === l.cantidad ? ' selected' : '') + '>' + (i + 1) + '</option>').join('') + '</select></label>' : '') +
@@ -550,6 +556,7 @@ async function vNuevo(el) {
     $('#crear').disabled = !ok;
     $('#tot').textContent = N.lineas.length ? 'Total ' + plata(total()) + (N.modo === 'exenta' ? ' · sin seña' : ' · seña ' + plata(sena())) : '';
   }
+  if (PRECLIENTA) { elegirCli(PRECLIENTA); PRECLIENTA = null; }
   $('#crear').onclick = () => conBoton($('#crear'), async () => {
     const p = { items: N.lineas.map((l) => ({ servicio_id: l.servicio_id, profesional_id: l.profesional_id, cantidad: l.cantidad, inicio: l.inicio })), sena: N.modo, nota_interna: $('#ni').value,
       clave: 'g-' + Date.now() + '-' + Math.random().toString(36).slice(2) };
@@ -595,21 +602,49 @@ async function vCaja(el) {
 }
 
 // =============================================================== Clientas
+// Formulario para cargar o editar una clienta. Al guardar llama a listo(ficha).
+function formClienta(f, listo) {
+  f = f || {};
+  const c = modal('<h3>' + (f.id ? 'Editar clienta' : 'Clienta nueva') + '</h3>' +
+    '<div class="campo"><label for="fn">Nombre y apellido</label><input id="fn" autocomplete="off" value="' + esc(f.nombre || '') + '"></div>' +
+    '<div class="campo"><label for="fc">Celular <span>(con código de área)</span></label><input id="fc" type="tel" inputmode="tel" placeholder="387 5123456" value="' + esc((f.celular || '').replace('+549', '')) + '"></div>' +
+    '<div class="campo"><label for="fb">Cumpleaños <span>(opcional)</span></label><input id="fb" type="date" value="' + esc(f.fecha_nacimiento || '') + '"></div>' +
+    '<div class="campo"><label for="fo">Nota <span>(opcional: alergias, preferencias, quién la recomendó…)</span></label><textarea id="fo" rows="2" maxlength="500">' + esc(f.notas || '') + '</textarea></div>' +
+    '<label class="check"><input type="checkbox" id="fconf"' + (f.confianza ? ' checked' : '') + '> Clienta de confianza: cuando le dan turno desde acá, viene marcado "Sin seña"</label>' +
+    '<p class="muted">En la página de turnos siempre paga seña.</p>' +
+    '<div class="fila"><button class="btn" id="ok">Guardar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#fn', c).focus();
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    const p = { nombre: $('#fn', c).value, celular: $('#fc', c).value, fecha_nacimiento: $('#fb', c).value, notas: $('#fo', c).value, confianza: $('#fconf', c).checked };
+    if (f.id) p.id = f.id;
+    try { const r = await rpc('clienta_guardar', { p }); cerrarModal(); listo(r); } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+let PRECLIENTA = null; // clienta elegida desde su ficha con "Darle turno"
 async function vClientas(el) {
-  el.innerHTML = '<div class="vista"><h2>Clientas</h2><div class="campo"><label for="q">Buscar por nombre o celular</label><input id="q" autocomplete="off"></div><div id="res" class="lista"></div><div id="ficha"></div></div>';
+  el.innerHTML = '<div class="vista"><div class="fila entre"><h2>Clientas</h2><button class="btn" id="cn">+ Clienta nueva</button></div>' +
+    '<div class="campo"><label for="q">Buscar por nombre o celular</label><input id="q" autocomplete="off"></div><div id="res" class="lista"></div><div id="ficha"></div></div>';
   let tmo;
+  $('#cn').onclick = () => formClienta(null, (f) => ficha(f.id));
   $('#q').oninput = () => { clearTimeout(tmo); tmo = setTimeout(async () => {
     const q = $('#q').value.trim(); if (q.length < 2) return $('#res').innerHTML = '';
     try { const r = await rpc('buscar_clientas', { p_texto: q });
-      $('#res').innerHTML = r.map((x) => '<button type="button" class="item" data-c="' + x.id + '"><span><b>' + esc(x.nombre) + '</b> <span class="muted">' + esc((x.celular || '').replace('+549', '')) + '</span></span><span class="muted">' + x.turnos + ' turnos</span></button>').join('') || '<p class="muted">Sin resultados.</p>';
+      $('#res').innerHTML = r.map((x) => '<button type="button" class="item" data-c="' + x.id + '"><span><b>' + esc(x.nombre) + '</b> <span class="muted">' + esc((x.celular || '').replace('+549', '')) + '</span>' + (x.confianza ? ' <span class="chip ok">De confianza</span>' : '') + '</span><span class="muted">' + x.turnos + ' turnos</span></button>').join('') ||
+        '<p class="muted">No está. <button type="button" class="btn sec chico" id="cn2">Cargarla como nueva</button></p>';
       $$('[data-c]', $('#res')).forEach((b) => b.onclick = () => ficha(+b.dataset.c));
+      if ($('#cn2')) $('#cn2').onclick = () => { const dig = q.replace(/\D/g, ''); formClienta(dig.length >= 6 ? { celular: q } : { nombre: q }, (f) => ficha(f.id)); };
     } catch (e) { errorEn($('#res'), e); } }, 300); };
   async function ficha(id) {
     const f = await rpc('clienta_ficha', { p_cliente: id });
-    $('#res').innerHTML = '';
-    $('#ficha').innerHTML = '<section class="card"><div class="fila entre"><h3>' + esc(f.nombre) + '</h3>' + (f.celular ? '<a class="btn wa chico" target="_blank" rel="noopener" href="' + wa(f.celular, 'Hola ' + f.nombre.split(' ')[0] + '!') + '">WhatsApp</a>' : '') + '</div>' +
-      '<p>' + esc((f.celular || '').replace('+549', '')) + '</p><p>Turnos: <b>' + f.resumen.total + '</b> · atendidos ' + f.resumen.terminados + ' · ausencias ' + f.resumen.ausentes + ' · anulados tarde ' + f.resumen.cancelados_fuera_termino + '</p>' +
-      (f.a_favor > 0 ? '<p class="aviso ok">Tiene ' + plata(f.a_favor) + ' a favor (señas).</p>' : '') + '</section><div class="lista">' + f.turnos.map((t) => turnoHtml(t, true)).join('') + '</div>';
+    $('#res').innerHTML = ''; $('#q').value = '';
+    $('#ficha').innerHTML = '<section class="card"><div class="fila entre"><h3>' + esc(f.nombre) + (f.confianza ? ' <span class="chip ok">De confianza</span>' : '') + '</h3>' + (f.celular ? '<a class="btn wa chico" target="_blank" rel="noopener" href="' + wa(f.celular, 'Hola ' + f.nombre.split(' ')[0] + '!') + '">WhatsApp</a>' : '') + '</div>' +
+      '<p>' + esc((f.celular || '').replace('+549', '')) + (f.fecha_nacimiento ? ' · Cumpleaños ' + diaMes(f.fecha_nacimiento) : '') + '</p>' + (f.notas ? '<p class="aviso">' + esc(f.notas) + '</p>' : '') +
+      '<p>Turnos: <b>' + f.resumen.total + '</b> · atendidos ' + f.resumen.terminados + ' · ausencias ' + f.resumen.ausentes + ' · anulados tarde ' + f.resumen.cancelados_fuera_termino + '</p>' +
+      (f.a_favor > 0 ? '<p class="aviso ok">Tiene ' + plata(f.a_favor) + ' a favor (señas).</p>' : '') +
+      '<div class="fila"><button class="btn" id="dt">Darle turno</button><button class="btn sec" id="ed">Editar datos</button></div></section>' +
+      '<div class="lista">' + (f.turnos.length ? f.turnos.map((t) => turnoHtml(t, true)).join('') : '<p class="muted">Todavía no tiene turnos.</p>') + '</div>';
+    $('#dt').onclick = () => { PRECLIENTA = { id: f.id, nombre: f.nombre, celular: f.celular, confianza: f.confianza }; mostrar('nuevo'); };
+    $('#ed').onclick = () => formClienta(f, (g) => ficha(g.id));
     const todos = f.turnos;
     $$('[data-a]', $('#ficha')).forEach((b) => b.onclick = () => accion(b.dataset.a, todos.find((t) => t.id === +b.closest('[data-t]').dataset.t), b));
   }
