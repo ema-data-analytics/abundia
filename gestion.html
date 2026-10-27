@@ -477,7 +477,10 @@ async function cobrar(t) {
   });
 }
 // Elegir horarios para una lista de renglones [{servicio_id, profesional_id, cantidad, nombre}]
+let PEDIDO_HORARIOS = 0;
 async function elegirHorarios(cont, lineas, fecha, alElegir, turnoId) {
+  // cada pedido lleva su número: si mientras tanto se pidió otro (otro día u otro servicio), esta respuesta se descarta
+  const pedido = ++PEDIDO_HORARIOS; cont.dataset.pedido = pedido;
   cont.innerHTML = '<p class="cargando">Buscando horarios…</p>';
   let h = '';
   try {
@@ -491,9 +494,10 @@ async function elegirHorarios(cont, lineas, fecha, alElegir, turnoId) {
       h += '<div class="campo"><label>' + esc(l.nombre) + (l.cantidad > 1 ? ' · ' + l.cantidad + ' zonas' : '') + '</label>' + (slots.length ? '<div class="horas">' + slots.map((s) =>
         '<button type="button" data-k="' + k + '" data-i="' + s.inicio + '" data-p="' + (l.profesional_id || s.profesionales[0].id) + '" title="' + esc(s.profesionales.map((p) => p.nombre).join(', ')) + '" aria-pressed="' + (l.inicio && +new Date(l.inicio) === +new Date(s.inicio)) + '">' + s.hora + '</button>').join('') + '</div>' : '<p class="muted">Sin horarios libres ese día.</p>') + '</div>';
     }
+    if (cont.dataset.pedido !== String(pedido)) return;
     cont.innerHTML = h;
     $$('.horas button', cont).forEach((b) => b.onclick = () => { const k = +b.dataset.k; lineas[k].inicio = b.dataset.i; for (let j = k + 1; j < lineas.length; j++) lineas[j].inicio = null; elegirHorarios(cont, lineas, fecha, alElegir, turnoId); alElegir(); });
-  } catch (e) { errorEn(cont, e); }
+  } catch (e) { if (cont.dataset.pedido === String(pedido)) errorEn(cont, e); }
 }
 async function reprogramar(t) {
   const servs = await rpc('gestion_servicios');

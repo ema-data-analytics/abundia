@@ -319,9 +319,11 @@ async function paso3() {
         (slots.length ? '<div class="horas">' + slots.map((x) => '<button type="button" class="hora" data-k="' + k + '" data-i="' + x.inicio + '" aria-pressed="' + (it.inicio && new Date(it.inicio).getTime() === new Date(x.inicio).getTime()) + '">' + x.hora + '</button>').join('') + '</div>'
           : '<p class="vacio">No quedan horarios este día' + (k > 0 ? ' después del servicio anterior' : '') + '. Probá otro día' + (it.profesional_id ? ' o con "Cualquiera"' : '') + '.</p>') + '</div>';
     }
+    if (!cont.isConnected) return; // mientras tanto se eligió otro día: esta respuesta ya no sirve
     cont.innerHTML = h;
     cont.querySelectorAll('.hora').forEach((b) => b.onclick = () => { const k = +b.dataset.k; S.items[k].inicio = b.dataset.i; for (let j = k + 1; j < S.items.length; j++) S.items[j].inicio = null; S.error = ''; paso3(); });
-  } catch (e) { cont.innerHTML = '<p class="aviso error">' + esc(e.message) + '</p>'; }
+  } catch (e) { if (cont.isConnected) cont.innerHTML = '<p class="aviso error">' + esc(e.message) + '</p>'; }
+  if (!cont.isConnected) return;
   const listo = S.items.every((i) => i.inicio);
   barra(listo ? '<b>' + fDiaLargo(S.items[0].inicio) + '</b> · ' + fHora(S.items[0].inicio) + ' h' : 'Elegí el horario', 'Seguir', listo, () => { paso4(); arriba(); });
 }
