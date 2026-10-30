@@ -796,12 +796,12 @@ async function vClientas(el) {
 // =============================================================== Ajustes
 let SUB = 'servicios';
 async function vAjustes(el) {
-  const subs = [['servicios', 'Servicios'], ['promos', 'Promociones'], ['profesionales', 'Profesionales'], ['cabinas', 'Cabinas'], ['horario', 'Horario del centro'], ['bloqueos', 'Bloqueos y feriados'], ['config', 'Configuración']];
+  const subs = [['servicios', 'Servicios'], ['promos', 'Promociones'], ['profesionales', 'Profesionales'], ['cabinas', 'Cabinas'], ['horario', 'Horario del centro'], ['bloqueos', 'Bloqueos y feriados'], ['costos', 'Costos'], ['config', 'Configuración']];
   if (YO.es_super) subs.push(['usuarios', 'Usuarios']);
   el.innerHTML = '<div class="vista"><div class="sub">' + subs.map(([k, n]) => '<button type="button" data-s="' + k + '" aria-pressed="' + (k === SUB) + '">' + n + '</button>').join('') + '</div><div id="sv"></div></div>';
   $$('.sub button').forEach((b) => b.onclick = () => { SUB = b.dataset.s; vAjustes(el); });
   const sv = $('#sv'); sv.innerHTML = '<p class="cargando">Cargando…</p>';
-  try { await ({ servicios: aServicios, promos: aPromos, profesionales: aProfesionales, cabinas: aCabinas, horario: aHorario, bloqueos: aBloqueos, config: aConfig, usuarios: aUsuarios })[SUB](sv); }
+  try { await ({ servicios: aServicios, promos: aPromos, profesionales: aProfesionales, cabinas: aCabinas, horario: aHorario, bloqueos: aBloqueos, costos: aCostos, config: aConfig, usuarios: aUsuarios })[SUB](sv); }
   catch (e) { errorEn(sv, e); }
 }
 function franjasHtml(lista) {
@@ -954,6 +954,196 @@ async function aBloqueos(sv) {
   });
   $$('[data-id]', sv).forEach((b) => b.onclick = () => conBoton(b, async () => { try { await rpc('bloqueo_anular', { p_id: +b.dataset.id }); vAjustes($('#vista')); } catch (e) { errorEn($('#err'), e); } }));
 }
+// =============================================================== Costos de los servicios
+let SUB_COSTOS = 'servicios';
+const SEMAFORO = { verde: ['ok', 'Bien'], amarillo: ['', 'Gana poco'], rojo: ['mal', 'Pierde plata'], gris: ['info', 'Faltan datos'] };
+const UNIDAD = { g: 'g', ml: 'ml', u: 'u' }, UNIDAD_LARGA = { g: 'gramos', ml: 'mililitros', u: 'unidades' };
+const pct = (n) => (n == null ? '—' : String(n).replace('.', ',') + ' %');
+const cant = (n) => Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 3 });
+const plataC = (n) => '$' + Number(n || 0).toLocaleString('es-AR', Number.isInteger(+n) ? {} : { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+async function aCostos(sv) {
+  sv.innerHTML = '<h2>Costos de los servicios</h2><div class="sub" id="subCostos" role="group" aria-label="Costos">' +
+    [['servicios', 'Servicios'], ['insumos', 'Insumos'], ['parametros', 'Gastos y parámetros']].map(([k, n]) => '<button type="button" data-cs="' + k + '" aria-pressed="' + (SUB_COSTOS === k) + '">' + n + '</button>').join('') +
+    '</div><div id="cv" class="vista"><p class="cargando">Cargando…</p></div>';
+  $$('#subCostos button', sv).forEach((b) => b.onclick = () => { SUB_COSTOS = b.dataset.cs; aCostos(sv); });
+  const cv = $('#cv');
+  try { await ({ servicios: cServicios, insumos: cInsumos, parametros: cParametros })[SUB_COSTOS](cv); } catch (e) { errorEn(cv, e); }
+}
+// ---- Servicios: costo, ganancia y semáforo
+async function cServicios(cv) {
+  const d = await rpc('costos_servicios');
+  const s = d.servicios;
+  cv.innerHTML = '<p class="aviso">Cuánto cuesta hacer cada servicio y cuánto queda. Tocá un servicio para ver el detalle y cargar su receta.' +
+    (d.margen_objetivo_pct != null ? ' Margen buscado: <b>' + pct(d.margen_objetivo_pct) + '</b>.' : ' Cargá el margen que buscan en <b>Gastos y parámetros</b>.') + '</p>' +
+    '<div class="fila">' + Object.entries(SEMAFORO).map(([k, [cl, n]]) => '<span class="chip ' + cl + '">' + n + ' · ' + s.filter((x) => x.semaforo === k).length + '</span>').join('') + '</div>' +
+    '<div class="lista" id="lcs">' + s.map((x) => '<button type="button" class="item" data-cs-id="' + x.id + '"><span><b>' + esc(x.nombre) + '</b>' + (x.por_zona ? ' <span class="muted">(por zona)</span>' : '') +
+      '<br><span class="muted">' + (x.precio != null ? 'Precio ' + plata(x.precio) : 'Sin precio') + ' · Costo ' + plata(x.costo_total) + (x.faltan.length ? ' (incompleto)' : '') + '</span></span>' +
+      '<span class="chip ' + SEMAFORO[x.semaforo][0] + '">' + (x.margen_pct != null ? pct(x.margen_pct) : SEMAFORO[x.semaforo][1]) + '</span></button>').join('') + '</div>';
+  $$('[data-cs-id]', cv).forEach((b) => b.onclick = () => detalleCosto(s.find((x) => x.id === +b.dataset.csId), d, cv));
+}
+function detalleCosto(x, d, cv) {
+  const fila = (n, v, ayuda) => '<tr><td>' + n + (ayuda ? '<br><span class="muted">' + ayuda + '</span>' : '') + '</td><td class="n">' + (v == null ? '<span class="chip info">falta</span>' : plataC(v)) + '</td></tr>';
+  const c = modal('<h3>' + esc(x.nombre) + '</h3>' +
+    (x.faltan.length ? '<p class="aviso error" role="alert">Falta cargar: ' + x.faltan.map(esc).join(', ') + '. Mientras falte, el costo está incompleto.</p>' : '') +
+    '<table class="tabla">' +
+    fila('Insumos', x.insumos, 'según la receta') +
+    fila('Mano de obra', x.mano_obra, esc(x.mano_obra_regla || '')) +
+    fila('Gastos del centro', x.gastos_centro, (x.duracion_min + x.preparacion_min) + ' min (atención + preparación)' + (d.gasto_por_hora != null ? ' a ' + plataC(d.gasto_por_hora) + ' la hora' : '')) +
+    fila('Luz de equipos', x.equipos_luz) + fila('Desgaste de equipos', x.equipos_desgaste) +
+    fila('Impuestos y cobro', x.impuestos_cobro, 'sobre el precio') +
+    '<tr><th>Costo total</th><th class="n">' + plataC(x.costo_total) + '</th></tr>' +
+    '<tr><td>Precio actual</td><td class="n">' + (x.precio != null ? plataC(x.precio) : '<span class="chip mal">sin precio</span>') + '</td></tr>' +
+    '<tr><th>Ganancia</th><th class="n">' + (x.ganancia != null ? plataC(x.ganancia) + ' · ' + pct(x.margen_pct) : '—') + '</th></tr>' +
+    '<tr><td>Precio para ganar ' + pct(d.margen_objetivo_pct) + '</td><td class="n">' + (x.precio_sugerido != null ? plataC(x.precio_sugerido) : '—') + '</td></tr></table>' +
+    '<p class="fila"><span class="chip ' + SEMAFORO[x.semaforo][0] + '">' + SEMAFORO[x.semaforo][1] + '</span></p>' +
+    '<div class="fila"><button class="btn" id="rec">Receta: insumos y equipos</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div>');
+  $('#rec', c).onclick = () => conBoton($('#rec', c), () => editarReceta(x, cv));
+}
+async function editarReceta(x, cv) {
+  const [rec, ins, cfg] = await Promise.all([rpc('receta_ver', { p_servicio: x.id }), rpc('insumos_listar'), rpc('costos_ver')]);
+  const eqs = cfg.equipos;
+  const filaIns = (r) => '<div class="card rins"><div class="grilla"><div class="campo"><label>Insumo</label><select class="ri-p"><option value="">Elegí…</option>' +
+      ins.map((i) => '<option value="' + i.id + '"' + (r && r.producto_id === i.id ? ' selected' : '') + '>' + esc(i.nombre) + ' · ' + cant(i.contenido) + ' ' + UNIDAD[i.unidad] + '</option>').join('') +
+      (r && !ins.some((i) => i.id === r.producto_id) ? '<option value="' + r.producto_id + '" selected>' + esc(r.nombre) + ' (dado de baja: sacalo o elegí otro)</option>' : '') + '</select></div>' +
+    '<div class="campo"><label>Usa por sesión <span class="ri-u">' + (r ? '(' + UNIDAD_LARGA[r.unidad] + ')' : '') + '</span></label><input class="ri-c" type="number" min="0" step="any" inputmode="decimal" value="' + (r ? +r.cantidad : '') + '"></div>' +
+    '<div class="campo"><label>o rinde <span>(sesiones)</span></label><input class="ri-r" type="number" min="0" step="any" inputmode="decimal" placeholder="Ej.: 30"></div></div>' +
+    '<div class="fila entre"><span class="muted ri-costo"></span><button type="button" class="btn sec chico ri-x">Sacar</button></div></div>';
+  const filaEq = (r) => '<div class="card req"><div class="grilla"><div class="campo"><label>Equipo</label><select class="re-e"><option value="">Elegí…</option>' +
+      eqs.map((e) => '<option value="' + e.id + '"' + (r && r.equipo_id === e.id ? ' selected' : '') + '>' + esc(e.nombre) + '</option>').join('') + '</select></div>' +
+    '<div class="campo"><label>Minutos de uso</label><input class="re-m" type="number" min="1" max="600" step="1" value="' + (r ? r.minutos : '') + '"></div></div>' +
+    '<div class="fila entre"><span></span><button type="button" class="btn sec chico re-x">Sacar</button></div></div>';
+  const c = modal('<h3>Receta · ' + esc(x.nombre) + '</h3><p class="muted">Poné cuánto se usa en <b>una</b> sesión' + (x.por_zona ? ' (una zona)' : '') + '. Si es más fácil, poné cuántas sesiones rinde el envase y el sistema hace la cuenta.</p>' +
+    '<h3>Insumos</h3><label class="check"><input type="checkbox" id="rsin"' + (rec.sin_insumos ? ' checked' : '') + '> Este servicio no usa insumos</label>' +
+    '<div id="rinsbox"' + (rec.sin_insumos ? ' hidden' : '') + '>' + (ins.length ? '' : '<p class="aviso">Todavía no hay insumos: cargalos en Costos → Insumos.</p>') + '<div id="rins" class="lista">' + rec.insumos.map(filaIns).join('') + '</div>' +
+    (ins.length ? '<button type="button" class="btn sec chico" id="ri+">+ Insumo</button>' : '') + '</div>' +
+    '<h3>Equipos</h3>' + (eqs.length ? '' : '<p class="aviso">No hay equipos cargados (se cargan en Gastos y parámetros). Si no usa equipos, dejalo vacío.</p>') + '<div id="reqs" class="lista">' + rec.equipos.map(filaEq).join('') + '</div>' +
+    (eqs.length ? '<button type="button" class="btn sec chico" id="re+">+ Equipo</button>' : '') +
+    '<div class="fila"><button class="btn" id="ok">Guardar receta</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  const enganchar = () => {
+    $$('.rins', c).forEach((f) => {
+      const calc = () => { const i = ins.find((z) => z.id === +$('.ri-p', f).value), q = +$('.ri-c', f).value, rd = +$('.ri-r', f).value;
+        $('.ri-u', f).textContent = i ? '(' + UNIDAD_LARGA[i.unidad] + ')' : '';
+        const q2 = rd > 0 && i ? (i.contenido || 1) / rd : q;
+        $('.ri-costo', f).textContent = i && q2 > 0 && i.costo_por_unidad != null ? 'Cuesta ' + plata(Math.round(i.costo_por_unidad * q2 * 100) / 100) + ' por sesión' + (rd > 0 ? ' (' + cant(q2) + ' ' + UNIDAD[i.unidad] + ')' : '') : ''; };
+      $('.ri-p', f).onchange = calc; $('.ri-c', f).oninput = () => { $('.ri-r', f).value = ''; calc(); }; $('.ri-r', f).oninput = () => { $('.ri-c', f).value = ''; calc(); };
+      $('.ri-x', f).onclick = () => f.remove(); calc(); });
+    $$('.req', c).forEach((f) => { $('.re-x', f).onclick = () => f.remove(); });
+  };
+  enganchar();
+  $('#rsin', c).onchange = (e) => { $('#rinsbox', c).hidden = e.target.checked; };
+  if ($('#ri\\+', c)) $('#ri\\+', c).onclick = () => { $('#rins', c).insertAdjacentHTML('beforeend', filaIns()); enganchar(); };
+  if ($('#re\\+', c)) $('#re\\+', c).onclick = () => { $('#reqs', c).insertAdjacentHTML('beforeend', filaEq()); enganchar(); };
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    const sin = $('#rsin', c).checked;
+    const p = { sin_insumos: sin, insumos: sin ? [] : $$('.rins', c).map((f) => { const o = { producto_id: $('.ri-p', f).value }; if ($('.ri-r', f).value !== '') o.rinde = $('.ri-r', f).value; else o.cantidad = $('.ri-c', f).value; return o; }),
+                equipos: $$('.req', c).map((f) => ({ equipo_id: $('.re-e', f).value, minutos: $('.re-m', f).value })) };
+    try { await rpc('receta_guardar', { p_servicio: x.id, p }); cerrarModal(); await cServicios(cv);
+      $('#cv').insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Receta de ' + esc(x.nombre) + ' guardada.</p>'); } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+// ---- Insumos
+async function cInsumos(cv) {
+  const ins = await rpc('insumos_listar');
+  cv.innerHTML = '<p class="aviso">Los productos que usan en los servicios. Buscalos en el catálogo del proveedor (el precio se actualiza solo cada semana) o cargalos a mano.</p>' +
+    '<div class="fila"><button class="btn" id="bcat">Buscar en el catálogo</button><button class="btn sec" id="bman">+ Cargar a mano</button></div>' +
+    '<div class="campo"><label for="fins">Filtrar</label><input id="fins" placeholder="Escribí parte del nombre"></div>' +
+    '<div class="lista" id="lins">' + (ins.length ? ins.map((i) => '<button type="button" class="item" data-ins="' + i.id + '" data-n="' + esc(i.nombre.toLowerCase()) + '"><span><b>' + esc(i.nombre) + '</b><br><span class="muted">Envase ' + cant(i.contenido) + ' ' + UNIDAD[i.unidad] +
+      ' · ' + (i.costo_por_unidad != null ? plata(i.costo_por_unidad) + ' por ' + UNIDAD[i.unidad] : 'sin precio') + ' · ' + (i.proveedor ? esc(i.proveedor) : 'cargado a mano') + (i.en_catalogo === false ? ' · ya no figura en el catálogo' : '') +
+      ' · ' + (i.servicios ? 'en ' + i.servicios + ' receta' + (i.servicios > 1 ? 's' : '') : 'sin usar') + '</span></span><b>' + (i.costo != null ? plata(i.costo) : '<span class="chip mal">sin precio</span>') + '</b></button>').join('')
+      : '<p class="muted">Todavía no hay insumos cargados.</p>') + '</div>';
+  $('#fins').oninput = (e) => { const q = e.target.value.trim().toLowerCase(); $$('#lins [data-ins]').forEach((b) => b.hidden = !!q && !b.dataset.n.includes(q)); };
+  $('#bcat').onclick = () => buscarCatalogo(cv);
+  $('#bman').onclick = () => formInsumo(null, null, cv);
+  $$('[data-ins]', cv).forEach((b) => b.onclick = () => formInsumo(ins.find((i) => i.id === +b.dataset.ins), null, cv));
+}
+function buscarCatalogo(cv) {
+  const c = modal('<h3>Buscar en el catálogo</h3><div class="campo"><label for="qcat">Producto</label><input id="qcat" placeholder="Ej.: jelly mask 650" autocomplete="off"></div>' +
+    '<p class="muted">Podés escribir varias palabras. Son precios al público de la página del proveedor.</p><div id="rcat" class="lista"></div><button class="btn sec" onclick="cerrarModal()">Volver</button>');
+  let pedido = 0, timer;
+  $('#qcat', c).oninput = (e) => { clearTimeout(timer); timer = setTimeout(async () => {
+    const n = ++pedido, q = e.target.value;
+    if (q.trim().length < 2) { $('#rcat', c).innerHTML = ''; return; }
+    try { const r = await rpc('catalogo_buscar', { p_texto: q }); if (n !== pedido) return;
+      $('#rcat', c).innerHTML = r.length ? r.map((x) => '<button type="button" class="item" data-cat="' + x.id + '"' + (x.ya_cargado ? ' disabled' : '') + '><span><b>' + esc(x.nombre) + '</b><br><span class="muted">' + esc(x.proveedor) + (x.ya_cargado ? ' · ya está cargado' : '') + '</span></span><b>' +
+        (x.precio_oferta != null ? plata(x.precio_oferta) + ' <s class="muted">' + plata(x.precio) + '</s>' : plata(x.precio)) + '</b></button>').join('') : '<p class="muted">No hay productos con esas palabras.</p>';
+      $$('[data-cat]', c).forEach((b) => b.onclick = () => formInsumo(null, r.find((x) => x.id === +b.dataset.cat), cv));
+    } catch (er) { if (n === pedido) errorEn($('#rcat', c), er); } }, 250); };
+  $('#qcat', c).focus();
+}
+function formInsumo(i, cat, cv) {
+  const desdeCat = !!cat || !!(i && i.catalogo_id);
+  const c = modal('<h3>' + (i ? 'Insumo' : cat ? 'Agregar del catálogo' : 'Insumo a mano') + '</h3>' +
+    (cat ? '<p><b>' + esc(cat.nombre) + '</b><br><span class="muted">' + esc(cat.proveedor) + ' · ' + plata(cat.precio_oferta ?? cat.precio) + (cat.url ? ' · <a href="' + esc(cat.url) + '" target="_blank" rel="noopener">ver en la página</a>' : '') + '</span></p>' : '') +
+    '<div class="grilla">' + (cat ? '' : '<div class="campo"><label for="in">Nombre</label><input id="in" value="' + esc(i ? i.nombre : '') + '"' + (i && i.catalogo_id ? ' disabled' : '') + '></div>') +
+    '<div class="campo"><label for="iu">Se mide en</label><select id="iu">' + Object.entries(UNIDAD_LARGA).map(([k, n]) => '<option value="' + k + '"' + ((i ? i.unidad : '') === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
+    '<div class="campo"><label for="ic">Cuánto trae el envase</label><input id="ic" type="number" min="0" step="any" inputmode="decimal" value="' + (i ? +i.contenido : '') + '" placeholder="Ej.: 650"></div>' +
+    (desdeCat ? '' : '<div class="campo"><label for="ip">Precio del envase</label><input id="ip" type="number" min="0" step="0.01" inputmode="decimal" value="' + (i && i.costo != null ? +i.costo : '') + '"></div>') + '</div>' +
+    (desdeCat && i ? '<p class="muted">El precio (' + plata(i.costo) + ') lo actualiza el catálogo del proveedor cada semana.' + (i.url ? ' <a href="' + esc(i.url) + '" target="_blank" rel="noopener">Ver en la página</a>' : '') + '</p>' : '') +
+    '<p class="muted">Ejemplo: un pote de 650 gramos → "gramos" y 650. Una caja de 100 gasas → "unidades" y 100.</p>' +
+    '<div class="fila"><button class="btn" id="ok">Guardar</button>' + (i ? '<button class="btn sec" id="baja">Dar de baja</button>' : '') + '<button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    const p = { unidad: $('#iu', c).value, contenido: $('#ic', c).value };
+    if (i) p.id = i.id; if (cat) p.catalogo_id = cat.id; if ($('#in', c)) p.nombre = $('#in', c).value; if ($('#ip', c)) p.costo = $('#ip', c).value;
+    try { await rpc('insumo_guardar', { p }); cerrarModal(); SUB_COSTOS = 'insumos'; await cInsumos(cv); } catch (e) { errorEn($('#err', c), e); }
+  });
+  if (i) $('#baja', c).onclick = () => conBoton($('#baja', c), async () => {
+    try { await rpc('insumo_guardar', { p: { id: i.id, estado: 'inactivo' } }); cerrarModal(); await cInsumos(cv); } catch (e) { errorEn($('#err', c), e); } });
+}
+// ---- Gastos y parámetros
+async function cParametros(cv) {
+  const d = await rpc('costos_ver'), k = d.config, gf = d.gastos_fijos;
+  const inp = (id, lbl, v, ayuda, extra) => '<div class="campo"><label for="' + id + '">' + lbl + (ayuda ? ' <span>(' + ayuda + ')</span>' : '') + '</label><input id="' + id + '" type="number" step="any" inputmode="decimal" value="' + (v ?? '') + '"' + (extra || '') + '></div>';
+  cv.innerHTML = '<section class="card"><h3>Gastos fijos del mes</h3>' +
+    '<label class="check"><input type="radio" name="gfo" value="m"' + (k.usar_gastos_reales ? '' : ' checked') + '><span><b>Escribirlos acá</b><br><span class="muted">Mientras no haya gastos cargados en Caja → Gastos.</span></span></label>' +
+    '<label class="check"><input type="radio" name="gfo" value="r"' + (k.usar_gastos_reales ? ' checked' : '') + '><span><b>Usar los gastos cargados</b><br><span class="muted">Promedio de los últimos meses completos (sin comisiones ni insumos, que ya cuentan en cada servicio).</span></span></label>' +
+    '<div id="gfr"' + (k.usar_gastos_reales ? '' : ' hidden') + '>' + inp('k_meses', 'Meses para el promedio', k.meses_promedio, '1 a 12', ' min="1" max="12" step="1"') + '</div>' +
+    '<div id="gfm"' + (k.usar_gastos_reales ? ' hidden' : '') + '><div class="lista">' + (d.gastos_fijos_lista.length ? d.gastos_fijos_lista.map((g) => '<div class="item"><span>' + esc(g.concepto) + '</span><span class="fila"><b>' + plata(g.monto_mensual) + '</b><button type="button" class="btn sec chico" data-gfe="' + g.id + '">Cambiar</button><button type="button" class="btn sec chico" data-gfb="' + g.id + '">Sacar</button></span></div>').join('')
+      : '<p class="muted">Todavía no hay gastos fijos cargados.</p>') + '</div>' +
+    '<div class="grilla"><div class="campo"><label for="gfc">Concepto</label><input id="gfc" placeholder="Ej.: Alquiler"></div>' + inp('gfv', 'Monto por mes', '', '', ' min="0"') + '</div><button type="button" class="btn sec" id="gfa">+ Agregar gasto fijo</button><div id="gferr"></div></div>' +
+    '<p class="total">Gastos fijos: ' + (gf.total_mes != null ? plata(gf.total_mes) + ' por mes' : 'falta cargar') + '</p>' +
+    '<p class="muted">Horas de atención de las profesionales: ' + cant(d.horas_mes) + ' por mes' + (d.horas_ocupadas_mes != null ? ' · ocupadas: ' + cant(d.horas_ocupadas_mes) : '') + (d.gasto_por_hora != null ? ' · <b>' + plata(d.gasto_por_hora) + ' por hora</b>' : '') + '</p></section>' +
+    '<section class="card"><h3>Parámetros</h3><div class="grilla">' +
+    inp('k_ocu', 'Ocupación esperada %', k.ocupacion_pct, 'de las horas de atención', ' min="1" max="100"') +
+    inp('k_hora', 'Valor hora de mano de obra', k.valor_hora, 'si no cobra comisión', ' min="0"') +
+    inp('k_kwh', 'Precio del kWh de luz', k.precio_kwh, 'de la factura', ' min="0"') +
+    inp('k_imp', 'Impuestos %', k.impuestos_pct, 'sobre lo cobrado', ' min="0" max="99"') +
+    inp('k_com', 'Comisión del cobro %', k.comision_cobro_pct, 'tarjeta o billetera', ' min="0" max="99"') +
+    inp('k_mar', 'Margen que buscan %', k.margen_objetivo_pct, 'ganancia sobre el precio', ' min="0" max="99"') + '</div>' +
+    '<button class="btn" id="kok">Guardar parámetros</button><div id="kerr"></div></section>' +
+    '<section class="card"><div class="fila entre"><h3>Equipos</h3><button class="btn sec chico" id="eqn">+ Equipo</button></div>' +
+    '<p class="muted">Para la luz y el desgaste: potencia (en la etiqueta del equipo, en watts), cuánto costó y cuántas horas de uso dura.</p><div class="lista">' +
+    (d.equipos.length ? d.equipos.map((e) => '<button type="button" class="item" data-eq="' + e.id + '"><span><b>' + esc(e.nombre) + '</b><br><span class="muted">' + (e.potencia_w != null ? cant(e.potencia_w) + ' W' : 'sin potencia') + ' · ' +
+      (e.costo_compra != null ? plata(e.costo_compra) : 'sin costo') + ' · ' + (e.vida_util_horas != null ? cant(e.vida_util_horas) + ' h de vida útil' : 'sin vida útil') + ' · en ' + e.servicios + ' receta' + (e.servicios === 1 ? '' : 's') + '</span></span></button>').join('')
+      : '<p class="muted">No hay equipos cargados.</p>') + '</div></section>';
+  $$('input[name=gfo]', cv).forEach((r) => r.onchange = () => conBoton(r, async () => {
+    try { await rpc('costos_config_guardar', { p: { usar_gastos_reales: r.value === 'r' } }); await cParametros(cv); } catch (e) { errorEn($('#kerr'), e); } }));
+  $('#gfa').onclick = () => conBoton($('#gfa'), async () => {
+    try { await rpc('costos_gasto_fijo_guardar', { p: { concepto: $('#gfc').value, monto_mensual: $('#gfv').value } }); await cParametros(cv); } catch (e) { errorEn($('#gferr'), e); } });
+  $$('[data-gfb]', cv).forEach((b) => b.onclick = () => conBoton(b, async () => {
+    try { await rpc('costos_gasto_fijo_guardar', { p: { id: +b.dataset.gfb, estado: 'inactivo' } }); await cParametros(cv); } catch (e) { errorEn($('#gferr'), e); } }));
+  $$('[data-gfe]', cv).forEach((b) => b.onclick = () => { const g = d.gastos_fijos_lista.find((x) => x.id === +b.dataset.gfe);
+    const c = modal('<h3>Cambiar gasto fijo</h3><div class="grilla"><div class="campo"><label for="gec">Concepto</label><input id="gec" value="' + esc(g.concepto) + '"></div><div class="campo"><label for="gev">Monto por mes</label><input id="gev" type="number" min="0" step="any" value="' + (+g.monto_mensual) + '"></div></div>' +
+      '<div class="fila"><button class="btn" id="ok">Guardar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+    $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+      try { await rpc('costos_gasto_fijo_guardar', { p: { id: g.id, concepto: $('#gec', c).value, monto_mensual: $('#gev', c).value } }); cerrarModal(); await cParametros(cv); } catch (e) { errorEn($('#err', c), e); } }); });
+  $('#kok').onclick = () => conBoton($('#kok'), async () => {
+    const p = { ocupacion_pct: $('#k_ocu').value, valor_hora: $('#k_hora').value, precio_kwh: $('#k_kwh').value, impuestos_pct: $('#k_imp').value, comision_cobro_pct: $('#k_com').value, margen_objetivo_pct: $('#k_mar').value };
+    if ($('#k_meses')) p.meses_promedio = $('#k_meses').value;
+    try { await rpc('costos_config_guardar', { p }); await cParametros(cv); $('#kerr').innerHTML = '<p class="aviso ok" role="status">Parámetros guardados.</p>'; } catch (e) { errorEn($('#kerr'), e); } });
+  const editarEq = (e) => {
+    const c = modal('<h3>' + (e ? 'Equipo' : 'Equipo nuevo') + '</h3><div class="grilla"><div class="campo"><label for="en">Nombre</label><input id="en" value="' + esc(e ? e.nombre : '') + '" placeholder="Ej.: Dermapen"></div>' +
+      inp('ep', 'Potencia', e && e.potencia_w, 'watts', ' min="0"') + inp('ec', 'Cuánto costó', e && e.costo_compra, '', ' min="0"') + inp('ev', 'Vida útil', e && e.vida_util_horas, 'horas de uso', ' min="1"') + '</div>' +
+      '<div class="fila"><button class="btn" id="ok">Guardar</button>' + (e ? '<button class="btn sec" id="baja">Dar de baja</button>' : '') + '<button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+    $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+      const p = { nombre: $('#en', c).value, potencia_w: $('#ep', c).value, costo_compra: $('#ec', c).value, vida_util_horas: $('#ev', c).value }; if (e) p.id = e.id;
+      try { await rpc('equipo_guardar', { p }); cerrarModal(); await cParametros(cv); } catch (er) { errorEn($('#err', c), er); } });
+    if (e) $('#baja', c).onclick = () => conBoton($('#baja', c), async () => {
+      try { await rpc('equipo_guardar', { p: { id: e.id, estado: 'inactivo' } }); cerrarModal(); await cParametros(cv); } catch (er) { errorEn($('#err', c), er); } });
+  };
+  $('#eqn').onclick = () => editarEq(null);
+  $$('[data-eq]', cv).forEach((b) => b.onclick = () => editarEq(d.equipos.find((x) => x.id === +b.dataset.eq)));
+}
+
 async function aConfig(sv) {
   const cfg = await rpc('config_ver'), t = cfg.turnos, e = cfg.empresa, cs = cfg.cuenta_sena || {}, ed = cfg.es_super;
   const num = (id, lbl, v, extra) => '<div class="campo"><label for="' + id + '">' + lbl + '</label><input id="' + id + '" type="number" value="' + (v ?? '') + '"' + (ed ? '' : ' disabled') + (extra || '') + '></div>';
