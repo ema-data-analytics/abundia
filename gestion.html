@@ -977,24 +977,24 @@ async function cServicios(cv) {
     (d.margen_objetivo_pct != null ? ' Margen buscado: <b>' + pct(d.margen_objetivo_pct) + '</b>.' : ' Cargá el margen que buscan en <b>Gastos y parámetros</b>.') + '</p>' +
     '<div class="fila">' + Object.entries(SEMAFORO).map(([k, [cl, n]]) => '<span class="chip ' + cl + '">' + n + ' · ' + s.filter((x) => x.semaforo === k).length + '</span>').join('') + '</div>' +
     '<div class="lista" id="lcs">' + s.map((x) => '<button type="button" class="item" data-cs-id="' + x.id + '"><span><b>' + esc(x.nombre) + '</b>' + (x.por_zona ? ' <span class="muted">(por zona)</span>' : '') +
-      '<br><span class="muted">' + (x.precio != null ? 'Precio ' + plata(x.precio) : 'Sin precio') + ' · Costo ' + plata(x.costo_total) + (x.faltan.length ? ' (incompleto)' : '') + '</span></span>' +
+      '<br><span class="muted">' + (x.precio != null ? 'Precio ' + plata(x.precio) : 'Sin precio') + ' · ' + (x.costo_total != null ? 'Costo ' + plata(x.costo_total) : 'Costo: faltan datos') + '</span></span>' +
       '<span class="chip ' + SEMAFORO[x.semaforo][0] + '">' + (x.margen_pct != null ? pct(x.margen_pct) : SEMAFORO[x.semaforo][1]) + '</span></button>').join('') + '</div>';
   $$('[data-cs-id]', cv).forEach((b) => b.onclick = () => detalleCosto(s.find((x) => x.id === +b.dataset.csId), d, cv));
 }
 function detalleCosto(x, d, cv) {
   const fila = (n, v, ayuda) => '<tr><td>' + n + (ayuda ? '<br><span class="muted">' + ayuda + '</span>' : '') + '</td><td class="n">' + (v == null ? '<span class="chip info">falta</span>' : plataC(v)) + '</td></tr>';
   const c = modal('<h3>' + esc(x.nombre) + '</h3>' +
-    (x.faltan.length ? '<p class="aviso error" role="alert">Falta cargar: ' + x.faltan.map(esc).join(', ') + '. Mientras falte, el costo está incompleto.</p>' : '') +
+    (x.faltan.length ? '<p class="aviso error" role="alert">Falta cargar: ' + x.faltan.map(esc).join(', ') + '. Mientras falte, el sistema no muestra el costo total' + (x.precio_sugerido == null ? ' ni el precio sugerido' : '') + '.</p>' : '') +
     '<table class="tabla">' +
     fila('Insumos', x.insumos, 'según la receta') +
     fila('Mano de obra', x.mano_obra, esc(x.mano_obra_regla || '')) +
     fila('Gastos del centro', x.gastos_centro, (x.duracion_min + x.preparacion_min) + ' min (atención + preparación)' + (d.gasto_por_hora != null ? ' a ' + plataC(d.gasto_por_hora) + ' la hora' : '')) +
     fila('Luz de equipos', x.equipos_luz) + fila('Desgaste de equipos', x.equipos_desgaste) +
     fila('Impuestos y cobro', x.impuestos_cobro, 'sobre el precio') +
-    '<tr><th>Costo total</th><th class="n">' + plataC(x.costo_total) + '</th></tr>' +
+    '<tr><th>Costo total</th><th class="n">' + (x.costo_total != null ? plataC(x.costo_total) : '<span class="chip info">faltan datos</span>') + '</th></tr>' +
     '<tr><td>Precio actual</td><td class="n">' + (x.precio != null ? plataC(x.precio) : '<span class="chip mal">sin precio</span>') + '</td></tr>' +
     '<tr><th>Ganancia</th><th class="n">' + (x.ganancia != null ? plataC(x.ganancia) + ' · ' + pct(x.margen_pct) : '—') + '</th></tr>' +
-    '<tr><td>Precio para ganar ' + pct(d.margen_objetivo_pct) + '</td><td class="n">' + (x.precio_sugerido != null ? plataC(x.precio_sugerido) : '—') + '</td></tr></table>' +
+    '<tr><td>' + (d.margen_objetivo_pct != null ? 'Precio para ganar ' + pct(d.margen_objetivo_pct) : 'Precio sugerido') + '</td><td class="n">' + (x.precio_sugerido != null ? plataC(x.precio_sugerido) : '<span class="chip info">faltan datos</span>') + '</td></tr></table>' +
     '<p class="fila"><span class="chip ' + SEMAFORO[x.semaforo][0] + '">' + SEMAFORO[x.semaforo][1] + '</span></p>' +
     '<div class="fila"><button class="btn" id="rec">Receta: insumos y equipos</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div>');
   $('#rec', c).onclick = () => conBoton($('#rec', c), () => editarReceta(x, cv));
