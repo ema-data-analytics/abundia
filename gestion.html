@@ -1065,7 +1065,7 @@ function buscarCatalogo(cv) {
     if (q.trim().length < 2) { $('#rcat', c).innerHTML = ''; return; }
     try { const r = await rpc('catalogo_buscar', { p_texto: q }); if (n !== pedido) return;
       $('#rcat', c).innerHTML = r.length ? r.map((x) => '<button type="button" class="item" data-cat="' + x.id + '"' + (x.ya_cargado ? ' disabled' : '') + '><span><b>' + esc(x.nombre) + '</b><br><span class="muted">' + esc(x.proveedor) + (x.ya_cargado ? ' · ya está cargado' : '') + '</span></span><b>' +
-        (x.precio_oferta != null ? plata(x.precio_oferta) + ' <s class="muted">' + plata(x.precio) + '</s>' : plata(x.precio)) + '</b></button>').join('') : '<p class="muted">No hay productos con esas palabras.</p>';
+        plata(x.precio) + '</b>' + (x.precio_oferta != null ? '<br><span class="muted">oferta ' + plata(x.precio_oferta) + '</span>' : '') + '</button>').join('') : '<p class="muted">No hay productos con esas palabras.</p>';
       $$('[data-cat]', c).forEach((b) => b.onclick = () => formInsumo(null, r.find((x) => x.id === +b.dataset.cat), cv));
     } catch (er) { if (n === pedido) errorEn($('#rcat', c), er); } }, 250); };
   $('#qcat', c).focus();
@@ -1073,7 +1073,7 @@ function buscarCatalogo(cv) {
 function formInsumo(i, cat, cv) {
   const desdeCat = !!cat || !!(i && i.catalogo_id);
   const c = modal('<h3>' + (i ? 'Insumo' : cat ? 'Agregar del catálogo' : 'Insumo a mano') + '</h3>' +
-    (cat ? '<p><b>' + esc(cat.nombre) + '</b><br><span class="muted">' + esc(cat.proveedor) + ' · ' + plata(cat.precio_oferta ?? cat.precio) + (cat.url ? ' · <a href="' + esc(cat.url) + '" target="_blank" rel="noopener">ver en la página</a>' : '') + '</span></p>' : '') +
+    (cat ? '<p><b>' + esc(cat.nombre) + '</b><br><span class="muted">' + esc(cat.proveedor) + ' · ' + plata(cat.precio) + (cat.url ? ' · <a href="' + esc(cat.url) + '" target="_blank" rel="noopener">ver en la página</a>' : '') + '</span>' + (cat.precio_oferta != null ? '<br><span class="muted">El proveedor lo tiene en oferta a ' + plata(cat.precio_oferta) + ': el costo se toma con el precio normal, ' + plata(cat.precio) + '.</span>' : '') + '</p>' : '') +
     '<div class="grilla">' + (cat ? '' : '<div class="campo"><label for="in">Nombre</label><input id="in" value="' + esc(i ? i.nombre : '') + '"' + (i && i.catalogo_id ? ' disabled' : '') + '></div>') +
     '<div class="campo"><label for="iu">Se mide en</label><select id="iu">' + Object.entries(UNIDAD_LARGA).map(([k, n]) => '<option value="' + k + '"' + ((i ? i.unidad : '') === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
     '<div class="campo"><label for="ic">Cuánto trae el envase</label><input id="ic" type="number" min="0" step="any" inputmode="decimal" value="' + (i ? +i.contenido : '') + '" placeholder="Ej.: 650"></div>' +
