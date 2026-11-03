@@ -1355,12 +1355,12 @@ async function listaPrecios() {
     lineas.push('• ' + x.servicio + ': ' + p); html += '<tr><td>' + esc(x.servicio) + '</td><td class="n">' + p + '</td></tr>';
   });
   const texto = ('Abundia · Lista de precios ' + new Intl.DateTimeFormat('es-AR', { timeZone: TZ }).format(new Date()) + '\n' + lineas.join('\n')).trim();
-  const c = modal('<h3>Lista de precios</h3><p class="muted">Precios vigentes de hoy, los mismos que ven las clientas en la página.</p>' +
+  const c = modal('<h3>Lista de precios</h3><p class="muted">Precios vigentes de hoy de todos los servicios activos (incluye los que no se reservan por la página).</p>' +
     (l.length ? '<table class="tabla" id="tlp">' + html + '</table>' : '<p class="muted">Todavía no hay servicios con precio.</p>') +
     '<div class="fila"><button class="btn" id="bcop">Copiar para WhatsApp</button><button class="btn sec" id="bimp">Imprimir o guardar PDF</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
   $('#bcop', c).onclick = async () => {
-    try { await navigator.clipboard.writeText(texto); $('#err', c).innerHTML = '<p class="aviso ok" role="status">Copiada. Pegala en WhatsApp o en Instagram.</p>'; }
-    catch (e) { $('#err', c).innerHTML = '<p class="aviso">No se pudo copiar sola: mantené apretado este texto y copialo.</p><textarea rows="8" style="width:100%">' + esc(texto) + '</textarea>'; }
+    try { await navigator.clipboard.writeText(texto); $('#err', c).innerHTML = '<p class="aviso ok" role="status">Copiada. Pegala en WhatsApp o en Instagram.</p>'; $('#err', c).scrollIntoView({ block: 'nearest' }); }
+    catch (e) { $('#err', c).innerHTML = '<p class="aviso">No se pudo copiar sola: mantené apretado este texto y copialo.</p><textarea rows="8" style="width:100%">' + esc(texto) + '</textarea>'; $('#err', c).scrollIntoView({ block: 'nearest' }); }
   };
   $('#bimp', c).onclick = () => {
     const w = window.open('', '_blank');
