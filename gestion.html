@@ -1536,8 +1536,12 @@ async function editarReceta(x, cv) {
   const [rec, ins, cfg] = await Promise.all([rpc('receta_ver', { p_servicio: x.id }), rpc('insumos_listar'), rpc('costos_ver')]);
   const eqs = cfg.equipos;
   // fila de insumo ya elegido (r: {producto_id | catalogo_id, nombre, unidad, contenido, costo_por_unidad, cantidad, nuevo})
-  const filaIns = (r) => '<div class="card rins" data-pid="' + (r.producto_id || '') + '" data-cat="' + (r.catalogo_id || '') + '" data-u="' + r.unidad + '" data-cont="' + (r.contenido || 1) + '" data-cpu="' + (r.costo_por_unidad ?? '') + '">' +
-    '<p><b>' + esc(r.nombre) + '</b> <span class="muted">· envase ' + cant(r.contenido || 1) + ' ' + UNIDAD[r.unidad] + (r.activo === false ? ' · dado de baja: sacalo o elegí otro' : '') + '</span></p>' +
+  const filaIns = (r) => '<div class="card rins" data-pid="' + (r.producto_id || '') + '" data-cat="' + (r.catalogo_id || '') + '"' + (r.manual ? ' data-man="1"' : '') + ' data-u="' + r.unidad + '" data-cont="' + (r.contenido || 1) + '" data-cpu="' + (r.costo_por_unidad ?? '') + '">' +
+    (r.manual ? '<p><b>Producto nuevo, cargado a mano</b> <span class="muted">· queda en Insumos al guardar</span></p><div class="campo"><label>Nombre</label><input class="ri-nom" value="' + esc(r.nombre || '') + '" placeholder="Ej.: Esmalte semipermanente rojo"></div>' +
+      '<div class="grilla"><div class="campo"><label>Se mide en</label><select class="ri-uu">' + Object.entries(UNIDAD_LARGA).map(([k, n]) => '<option value="' + k + '"' + (k === r.unidad ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
+      '<div class="campo"><label>Cuánto trae el envase</label><input class="ri-cont" type="number" min="0" step="any" inputmode="decimal" placeholder="Ej.: 15"></div>' +
+      '<div class="campo"><label>Precio del envase</label><input class="ri-pre" type="number" min="0" step="any" inputmode="decimal" placeholder="Ej.: 9000"></div></div>'
+    : '<p><b>' + esc(r.nombre) + '</b> <span class="muted">· envase ' + cant(r.contenido || 1) + ' ' + UNIDAD[r.unidad] + (r.activo === false ? ' · dado de baja: sacalo o elegí otro' : '') + '</span></p>') +
     (r.nuevo ? '<p class="muted">Es de la lista del proveedor: se carga solo al guardar. Revisá cómo se mide y cuánto trae el envase.</p><div class="grilla"><div class="campo"><label>Se mide en</label><select class="ri-uu">' +
       Object.entries(UNIDAD_LARGA).map(([k, n]) => '<option value="' + k + '"' + (k === r.unidad ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
       '<div class="campo"><label>Cuánto trae el envase</label><input class="ri-cont" type="number" min="0" step="any" inputmode="decimal" value="' + (r.contenido || 1) + '"></div></div>' : '') +
@@ -1561,12 +1565,14 @@ async function editarReceta(x, cv) {
   const enganchar = () => {
     $$('.rins', c).forEach((f) => {
       const calc = () => { const u = $('.ri-uu', f) ? $('.ri-uu', f).value : f.dataset.u, cont = $('.ri-cont', f) ? +$('.ri-cont', f).value || 1 : +f.dataset.cont || 1;
-        const cpu = f.dataset.cpu === '' ? null : ($('.ri-cont', f) ? +f.dataset.cpu * (+f.dataset.cont || 1) / cont : +f.dataset.cpu);
+        const cpu = f.dataset.man ? (+$('.ri-pre', f).value > 0 && +$('.ri-cont', f).value > 0 ? +$('.ri-pre', f).value / +$('.ri-cont', f).value : null)
+          : f.dataset.cpu === '' ? null : ($('.ri-cont', f) ? +f.dataset.cpu * (+f.dataset.cont || 1) / cont : +f.dataset.cpu);
         const q = +$('.ri-c', f).value, rd = +$('.ri-r', f).value, q2 = rd > 0 ? cont / rd : q;
         $('.ri-u', f).textContent = '(' + UNIDAD_LARGA[u] + ')';
         $('.ri-costo', f).textContent = q2 > 0 && cpu != null ? 'Cuesta ' + plata(Math.round(cpu * q2 * 100) / 100) + ' por sesión' + (rd > 0 ? ' (' + cant(q2) + ' ' + UNIDAD[u] + ')' : '') : ''; };
       $('.ri-c', f).oninput = () => { $('.ri-r', f).value = ''; calc(); }; $('.ri-r', f).oninput = () => { $('.ri-c', f).value = ''; calc(); };
       if ($('.ri-uu', f)) { $('.ri-uu', f).onchange = calc; $('.ri-cont', f).oninput = calc; }
+      if ($('.ri-pre', f)) $('.ri-pre', f).oninput = calc;
       $('.ri-x', f).onclick = () => f.remove(); calc(); });
     $$('.rbus', c).forEach((f) => {
       if (f.dataset.ok) return; f.dataset.ok = '1'; let tmo;
@@ -1576,7 +1582,8 @@ async function editarReceta(x, cv) {
         try { const r = await rpc('insumo_receta_buscar', { p_texto: q });
           $('.ri-res', f).innerHTML = r.length ? r.map((x, k) => '<button type="button" class="item" data-k="' + k + '"><span><b>' + esc(x.nombre) + '</b><br><span class="muted">' +
             (x.origen === 'insumo' ? 'ya cargado' : esc(x.proveedor || 'lista del proveedor') + (x.codigo ? ' · cód. ' + esc(x.codigo) : '')) + ' · envase ' + cant(x.contenido) + ' ' + UNIDAD[x.unidad] + '</span></span><b>' + (x.costo != null ? plata(x.costo) : '') + '</b></button>').join('')
-            : '<p class="muted">No aparece. Probá con otra palabra o cargalo a mano en Insumos.</p>';
+            : '<p class="muted">No está en tus insumos ni en la lista del proveedor. Probá con otra palabra o <button type="button" class="enlace ri-man">cargalo a mano acá</button>.</p>';
+          if ($('.ri-man', f)) $('.ri-man', f).onclick = () => { f.outerHTML = filaIns({ manual: true, nombre: q, unidad: 'ml' }); enganchar(); };
           $$('[data-k]', $('.ri-res', f)).forEach((b) => b.onclick = () => { const x = r[+b.dataset.k];
             if ($$('.rins', c).some((g) => (x.producto_id && +g.dataset.pid === x.producto_id) || (x.catalogo_id && +g.dataset.cat === x.catalogo_id))) { $('.ri-res', f).innerHTML = '<p class="aviso error">Ese producto ya está en este servicio.</p>'; return; }
             f.outerHTML = filaIns(Object.assign({}, x, { nuevo: x.origen === 'catalogo' })); enganchar(); });
@@ -1590,7 +1597,7 @@ async function editarReceta(x, cv) {
   if ($('#re\\+', c)) $('#re\\+', c).onclick = () => { $('#reqs', c).insertAdjacentHTML('beforeend', filaEq()); enganchar(); };
   $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
     const sin = $('#rsin', c).checked;
-    const p = { sin_insumos: sin, insumos: sin ? [] : $$('.rins', c).map((f) => { const o = f.dataset.pid ? { producto_id: f.dataset.pid } : { catalogo_id: f.dataset.cat, unidad: $('.ri-uu', f).value, contenido: $('.ri-cont', f).value }; if ($('.ri-r', f).value !== '') o.rinde = $('.ri-r', f).value; else o.cantidad = $('.ri-c', f).value; return o; }),
+    const p = { sin_insumos: sin, insumos: sin ? [] : $$('.rins', c).map((f) => { const o = f.dataset.pid ? { producto_id: f.dataset.pid } : f.dataset.man ? { nuevo: { nombre: $('.ri-nom', f).value.trim(), unidad: $('.ri-uu', f).value, contenido: $('.ri-cont', f).value, costo: $('.ri-pre', f).value } } : { catalogo_id: f.dataset.cat, unidad: $('.ri-uu', f).value, contenido: $('.ri-cont', f).value }; if ($('.ri-r', f).value !== '') o.rinde = $('.ri-r', f).value; else o.cantidad = $('.ri-c', f).value; return o; }),
                 equipos: $$('.req', c).map((f) => ({ equipo_id: $('.re-e', f).value, minutos: $('.re-m', f).value })) };
     try { await rpc('receta_guardar', { p_servicio: x.id, p }); cerrarModal(); await cServicios(cv);
       $('#cv').insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Insumos de ' + esc(x.nombre) + ' guardados.</p>'); } catch (e) { errorEn($('#err', c), e); }
