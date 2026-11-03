@@ -276,7 +276,7 @@ async function arrancar() {
   if (!data.session) return pantallaLogin();
   try { YO = await rpc('mi_usuario'); } catch (e) { return pantallaLogin(e.message); }
   if (!YO || !YO.es_admin) { await sb.auth.signOut(); return pantallaLogin('Ese usuario no tiene acceso a la gestión.'); }
-  const vistas = [['agenda', 'Agenda'], ['nuevo', 'Nuevo turno'], ['caja', 'Caja'], ['clientas', 'Clientas'], ['ajustes', 'Ajustes']];
+  const vistas = [['agenda', 'Agenda'], ['nuevo', 'Nuevo turno'], ['caja', 'Caja'], ['clientas', 'Clientas'], ['calculador', 'Calculador de costos'], ['ajustes', 'Ajustes']];
   raiz.innerHTML = '<header class="top gut"><div class="col"><img src="' + LOGO + '" alt=""><span class="quien">' + esc(YO.nombre) + (YO.es_super ? ' · superusuario' : ' · administradora') + '</span>' +
     '<a href="' + PUBLICA + '" target="_blank" rel="noopener"><span class="largo">Ver página pública</span><span class="corto">Página</span></a><a href="manual.html" target="_blank" rel="noopener" id="ayuda">Ayuda</a><button type="button" id="mclave">Contraseña</button><button type="button" id="salir">Salir</button></div></header>' +
     '<nav class="tabs gut"><div class="col">' + vistas.map(([k, n]) => '<button type="button" data-v="' + k + '">' + n + '</button>').join('') + '</div></nav>' +
@@ -291,7 +291,7 @@ async function mostrar(v) {
   VISTA = v;
   $$('nav.tabs button').forEach((b) => b.setAttribute('aria-current', b.dataset.v === v ? 'page' : 'false'));
   const el = $('#vista'); el.innerHTML = '<p class="cargando">Cargando…</p>';
-  try { await ({ agenda: vAgenda, nuevo: vNuevo, caja: vCaja, clientas: vClientas, ajustes: vAjustes })[v](el); }
+  try { await ({ agenda: vAgenda, nuevo: vNuevo, caja: vCaja, clientas: vClientas, calculador: vCalculador, ajustes: vAjustes })[v](el); }
   catch (e) { errorEn(el, e); }
 }
 
@@ -796,7 +796,7 @@ async function vClientas(el) {
 // =============================================================== Ajustes
 let SUB = 'servicios';
 async function vAjustes(el) {
-  const subs = [['servicios', 'Servicios'], ['promos', 'Promociones'], ['profesionales', 'Profesionales'], ['cabinas', 'Cabinas'], ['horario', 'Horario del centro'], ['bloqueos', 'Bloqueos y feriados'], ['costos', 'Costos'], ['config', 'Configuración']];
+  const subs = [['servicios', 'Servicios'], ['promos', 'Promociones'], ['profesionales', 'Profesionales'], ['cabinas', 'Cabinas'], ['horario', 'Horario del centro'], ['bloqueos', 'Bloqueos y feriados'], ['config', 'Configuración']];
   if (YO.es_super) subs.push(['usuarios', 'Usuarios']);
   el.innerHTML = '<div class="vista"><div class="sub">' + subs.map(([k, n]) => '<button type="button" data-s="' + k + '" aria-pressed="' + (k === SUB) + '">' + n + '</button>').join('') + '</div><div id="sv"></div></div>';
   $$('.sub button').forEach((b) => b.onclick = () => { SUB = b.dataset.s; vAjustes(el); });
@@ -961,8 +961,15 @@ const UNIDAD = { g: 'g', ml: 'ml', u: 'u' }, UNIDAD_LARGA = { g: 'gramos', ml: '
 const pct = (n) => (n == null ? '—' : String(n).replace('.', ',') + ' %');
 const cant = (n) => Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 3 });
 const plataC = (n) => '$' + Number(n || 0).toLocaleString('es-AR', Number.isInteger(+n) ? {} : { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+async function vCalculador(el) {
+  el.innerHTML = '<div class="vista"><div id="sv"></div></div>';
+  await aCostos($('#sv'));
+}
 async function aCostos(sv) {
-  sv.innerHTML = '<h2>Costos de los servicios</h2><div class="sub" id="subCostos" role="group" aria-label="Costos">' +
+  sv.innerHTML = '<h2>Calculador de costos</h2>' +
+    '<p class="muted" id="calcExplica">Acá ven cuánto les cuesta de verdad hacer cada servicio: los productos que usa, el tiempo de trabajo, el alquiler y los gastos del local, la luz y el desgaste de los equipos, y los impuestos. Sirve para saber si el precio que cobran les deja ganancia y cuánto deberían cobrar. ' +
+    'Para que calcule: <b>1)</b> carguen los productos en <b>Insumos</b>; <b>2)</b> en cada servicio carguen sus <b>insumos del servicio</b>; <b>3)</b> completen <b>Gastos y parámetros</b>.</p>' +
+    '<div class="sub" id="subCostos" role="group" aria-label="Calculador de costos">' +
     [['servicios', 'Servicios'], ['insumos', 'Insumos'], ['parametros', 'Gastos y parámetros']].map(([k, n]) => '<button type="button" data-cs="' + k + '" aria-pressed="' + (SUB_COSTOS === k) + '">' + n + '</button>').join('') +
     '</div><div id="cv" class="vista"><p class="cargando">Cargando…</p></div>';
   $$('#subCostos button', sv).forEach((b) => b.onclick = () => { SUB_COSTOS = b.dataset.cs; aCostos(sv); });
@@ -973,7 +980,7 @@ async function aCostos(sv) {
 async function cServicios(cv) {
   const d = await rpc('costos_servicios');
   const s = d.servicios;
-  cv.innerHTML = '<p class="aviso">Cuánto cuesta hacer cada servicio y cuánto queda. Tocá un servicio para ver el detalle y cargar su receta.' +
+  cv.innerHTML = '<p class="aviso">Cuánto cuesta hacer cada servicio y cuánto queda. Tocá un servicio para ver el detalle y cargar sus insumos.' +
     (d.margen_objetivo_pct != null ? ' Margen buscado: <b>' + pct(d.margen_objetivo_pct) + '</b>.' : ' Cargá el margen que buscan en <b>Gastos y parámetros</b>.') + '</p>' +
     '<div class="fila">' + Object.entries(SEMAFORO).map(([k, [cl, n]]) => '<span class="chip ' + cl + '">' + n + ' · ' + s.filter((x) => x.semaforo === k).length + '</span>').join('') + '</div>' +
     '<div class="lista" id="lcs">' + s.map((x) => '<button type="button" class="item" data-cs-id="' + x.id + '"><span><b>' + esc(x.nombre) + '</b>' + (x.por_zona ? ' <span class="muted">(por zona)</span>' : '') +
@@ -986,7 +993,7 @@ function detalleCosto(x, d, cv) {
   const c = modal('<h3>' + esc(x.nombre) + '</h3>' +
     (x.faltan.length ? '<p class="aviso error" role="alert">Falta cargar: ' + x.faltan.map(esc).join(', ') + '. Mientras falte, el sistema no muestra el costo total' + (x.precio_sugerido == null ? ' ni el precio sugerido' : '') + '.</p>' : '') +
     '<table class="tabla">' +
-    fila('Insumos', x.insumos, 'según la receta') +
+    fila('Insumos', x.insumos, 'según los insumos del servicio') +
     fila('Mano de obra', x.mano_obra, esc(x.mano_obra_regla || '')) +
     fila('Gastos del centro', x.gastos_centro, (x.duracion_min + x.preparacion_min) + ' min (atención + preparación)' + (d.gasto_por_hora != null ? ' a ' + plataC(d.gasto_por_hora) + ' la hora' : '')) +
     fila('Luz de equipos', x.equipos_luz) + fila('Desgaste de equipos', x.equipos_desgaste) +
@@ -996,7 +1003,7 @@ function detalleCosto(x, d, cv) {
     '<tr><th>Ganancia</th><th class="n">' + (x.ganancia != null ? plataC(x.ganancia) + ' · ' + pct(x.margen_pct) : '—') + '</th></tr>' +
     '<tr><td>' + (d.margen_objetivo_pct != null ? 'Precio para ganar ' + pct(d.margen_objetivo_pct) : 'Precio sugerido') + '</td><td class="n">' + (x.precio_sugerido != null ? plataC(x.precio_sugerido) : '<span class="chip info">faltan datos</span>') + '</td></tr></table>' +
     '<p class="fila"><span class="chip ' + SEMAFORO[x.semaforo][0] + '">' + SEMAFORO[x.semaforo][1] + '</span></p>' +
-    '<div class="fila"><button class="btn" id="rec">Receta: insumos y equipos</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div>');
+    '<div class="fila"><button class="btn" id="rec">Insumos del servicio</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div>');
   $('#rec', c).onclick = () => conBoton($('#rec', c), () => editarReceta(x, cv));
 }
 async function editarReceta(x, cv) {
@@ -1012,13 +1019,13 @@ async function editarReceta(x, cv) {
       eqs.map((e) => '<option value="' + e.id + '"' + (r && r.equipo_id === e.id ? ' selected' : '') + '>' + esc(e.nombre) + '</option>').join('') + '</select></div>' +
     '<div class="campo"><label>Minutos de uso</label><input class="re-m" type="number" min="1" max="600" step="1" value="' + (r ? r.minutos : '') + '"></div></div>' +
     '<div class="fila entre"><span></span><button type="button" class="btn sec chico re-x">Sacar</button></div></div>';
-  const c = modal('<h3>Receta · ' + esc(x.nombre) + '</h3><p class="muted">Poné cuánto se usa en <b>una</b> sesión' + (x.por_zona ? ' (una zona)' : '') + '. Si es más fácil, poné cuántas sesiones rinde el envase y el sistema hace la cuenta.</p>' +
+  const c = modal('<h3>Insumos del servicio · ' + esc(x.nombre) + '</h3><p class="muted">Poné cuánto se usa en <b>una</b> sesión' + (x.por_zona ? ' (una zona)' : '') + '. Si es más fácil, poné cuántas sesiones rinde el envase y el sistema hace la cuenta.</p>' +
     '<h3>Insumos</h3><label class="check"><input type="checkbox" id="rsin"' + (rec.sin_insumos ? ' checked' : '') + '> Este servicio no usa insumos</label>' +
     '<div id="rinsbox"' + (rec.sin_insumos ? ' hidden' : '') + '>' + (ins.length ? '' : '<p class="aviso">Todavía no hay insumos: cargalos en Costos → Insumos.</p>') + '<div id="rins" class="lista">' + rec.insumos.map(filaIns).join('') + '</div>' +
     (ins.length ? '<button type="button" class="btn sec chico" id="ri+">+ Insumo</button>' : '') + '</div>' +
     '<h3>Equipos</h3>' + (eqs.length ? '' : '<p class="aviso">No hay equipos cargados (se cargan en Gastos y parámetros). Si no usa equipos, dejalo vacío.</p>') + '<div id="reqs" class="lista">' + rec.equipos.map(filaEq).join('') + '</div>' +
     (eqs.length ? '<button type="button" class="btn sec chico" id="re+">+ Equipo</button>' : '') +
-    '<div class="fila"><button class="btn" id="ok">Guardar receta</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+    '<div class="fila"><button class="btn" id="ok">Guardar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
   const enganchar = () => {
     $$('.rins', c).forEach((f) => {
       const calc = () => { const i = ins.find((z) => z.id === +$('.ri-p', f).value), q = +$('.ri-c', f).value, rd = +$('.ri-r', f).value;
@@ -1038,7 +1045,7 @@ async function editarReceta(x, cv) {
     const p = { sin_insumos: sin, insumos: sin ? [] : $$('.rins', c).map((f) => { const o = { producto_id: $('.ri-p', f).value }; if ($('.ri-r', f).value !== '') o.rinde = $('.ri-r', f).value; else o.cantidad = $('.ri-c', f).value; return o; }),
                 equipos: $$('.req', c).map((f) => ({ equipo_id: $('.re-e', f).value, minutos: $('.re-m', f).value })) };
     try { await rpc('receta_guardar', { p_servicio: x.id, p }); cerrarModal(); await cServicios(cv);
-      $('#cv').insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Receta de ' + esc(x.nombre) + ' guardada.</p>'); } catch (e) { errorEn($('#err', c), e); }
+      $('#cv').insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Insumos de ' + esc(x.nombre) + ' guardados.</p>'); } catch (e) { errorEn($('#err', c), e); }
   });
 }
 // ---- Insumos
@@ -1049,7 +1056,7 @@ async function cInsumos(cv) {
     '<div class="campo"><label for="fins">Filtrar</label><input id="fins" placeholder="Escribí parte del nombre"></div>' +
     '<div class="lista" id="lins">' + (ins.length ? ins.map((i) => '<button type="button" class="item" data-ins="' + i.id + '" data-n="' + esc(i.nombre.toLowerCase()) + '"><span><b>' + esc(i.nombre) + '</b><br><span class="muted">Envase ' + cant(i.contenido) + ' ' + UNIDAD[i.unidad] +
       ' · ' + (i.costo_por_unidad != null ? plata(i.costo_por_unidad) + ' por ' + UNIDAD[i.unidad] : 'sin precio') + ' · ' + (i.proveedor ? esc(i.proveedor) : 'cargado a mano') + (i.en_catalogo === false ? ' · ya no figura en el catálogo' : '') +
-      ' · ' + (i.servicios ? 'en ' + i.servicios + ' receta' + (i.servicios > 1 ? 's' : '') : 'sin usar') + '</span></span><b>' + (i.costo != null ? plata(i.costo) : '<span class="chip mal">sin precio</span>') + '</b></button>').join('')
+      ' · ' + (i.servicios ? 'en ' + i.servicios + ' servicio' + (i.servicios > 1 ? 's' : '') : 'sin usar') + '</span></span><b>' + (i.costo != null ? plata(i.costo) : '<span class="chip mal">sin precio</span>') + '</b></button>').join('')
       : '<p class="muted">Todavía no hay insumos cargados.</p>') + '</div>';
   $('#fins').oninput = (e) => { const q = e.target.value.trim().toLowerCase(); $$('#lins [data-ins]').forEach((b) => b.hidden = !!q && !b.dataset.n.includes(q)); };
   $('#bcat').onclick = () => buscarCatalogo(cv);
@@ -1113,7 +1120,7 @@ async function cParametros(cv) {
     '<section class="card"><div class="fila entre"><h3>Equipos</h3><button class="btn sec chico" id="eqn">+ Equipo</button></div>' +
     '<p class="muted">Para la luz y el desgaste: potencia (en la etiqueta del equipo, en watts), cuánto costó y cuántas horas de uso dura.</p><div class="lista">' +
     (d.equipos.length ? d.equipos.map((e) => '<button type="button" class="item" data-eq="' + e.id + '"><span><b>' + esc(e.nombre) + '</b><br><span class="muted">' + (e.potencia_w != null ? cant(e.potencia_w) + ' W' : 'sin potencia') + ' · ' +
-      (e.costo_compra != null ? plata(e.costo_compra) : 'sin costo') + ' · ' + (e.vida_util_horas != null ? cant(e.vida_util_horas) + ' h de vida útil' : 'sin vida útil') + ' · en ' + e.servicios + ' receta' + (e.servicios === 1 ? '' : 's') + '</span></span></button>').join('')
+      (e.costo_compra != null ? plata(e.costo_compra) : 'sin costo') + ' · ' + (e.vida_util_horas != null ? cant(e.vida_util_horas) + ' h de vida útil' : 'sin vida útil') + ' · en ' + e.servicios + ' servicio' + (e.servicios === 1 ? '' : 's') + '</span></span></button>').join('')
       : '<p class="muted">No hay equipos cargados.</p>') + '</div></section>';
   $$('input[name=gfo]', cv).forEach((r) => r.onchange = () => conBoton(r, async () => {
     try { await rpc('costos_config_guardar', { p: { usar_gastos_reales: r.value === 'r' } }); await cParametros(cv); } catch (e) { errorEn($('#kerr'), e); } }));
