@@ -39,7 +39,7 @@ nav.tabs { background: var(--marca-2); position: sticky; top: 56px; z-index: 19 
 nav.tabs .col { display: flex; overflow-x: auto; gap: 2px }
 nav.tabs button { background: none; border: 0; color: var(--oro-claro); padding: 11px 14px; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; opacity: .8 }
 nav.tabs button[aria-current="page"] { border-bottom-color: var(--oro); opacity: 1 }
-@media (max-width: 640px) { nav.tabs .col { gap: 0 } nav.tabs button { flex: 1 1 0; min-width: 0; padding: 10px 2px; font-size: .8rem; white-space: normal; line-height: 1.15; text-align: center } }
+@media (max-width: 640px) { nav.tabs .col { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 } nav.tabs button { min-width: 0; padding: 8px 2px; font-size: .8rem; white-space: normal; line-height: 1.15; text-align: center } }
 main { padding-block: 16px 60px }
 .vista { display: grid; gap: 14px }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px }
@@ -93,6 +93,19 @@ i.e1 { background: var(--marca) } i.e2 { background: var(--oro-claro) } i.e3 { b
 .tabla { width: 100%; border-collapse: collapse; font-size: .92rem }
 .tabla th, .tabla td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line) }
 .tabla td.n, .tabla th.n { text-align: right; font-variant-numeric: tabular-nums }
+.filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: end; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin: 10px 0 }
+.filtros .campo { margin: 0 }
+.tgrid { width: 100%; border-collapse: collapse; font-size: .9rem; margin: 8px 0 }
+.tgrid th, .tgrid td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top }
+.tgrid th { font-size: .8rem; color: var(--muted); font-weight: 600 }
+.tgrid td.n, .tgrid th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap }
+.tgrid td.acc { text-align: right; white-space: nowrap } .tgrid td.acc .btn { margin: 2px 0 2px 4px }
+button.enlace { background: none; border: 0; padding: 0; color: var(--marca); text-decoration: underline; cursor: pointer; font: inherit }
+@media (max-width: 760px) { .tgrid thead { display: none } .tgrid, .tgrid tbody, .tgrid tr, .tgrid td { display: block; width: 100% }
+  .tgrid tr { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; background: var(--surface) }
+  .tgrid td { display: flex; justify-content: space-between; gap: 12px; border: 0; padding: 3px 0; text-align: right }
+  .tgrid td::before { content: attr(data-l); color: var(--muted); font-size: .8rem; text-align: left }
+  .tgrid td.n { white-space: normal } .tgrid td.acc { justify-content: flex-end; flex-wrap: wrap; padding-top: 6px; white-space: normal } .tgrid td.acc::before { content: none } }
 .sub { display: flex; gap: 6px; flex-wrap: wrap }
 .sub button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px }
 .sub button[aria-pressed="true"] { background: var(--marca); color: var(--oro-claro); border-color: var(--marca) }
@@ -277,7 +290,7 @@ async function arrancar() {
   if (!data.session) return pantallaLogin();
   try { YO = await rpc('mi_usuario'); } catch (e) { return pantallaLogin(e.message); }
   if (!YO || !YO.es_admin) { await sb.auth.signOut(); return pantallaLogin('Ese usuario no tiene acceso a la gestión.'); }
-  const vistas = [['agenda', 'Agenda'], ['nuevo', 'Nuevo turno'], ['caja', 'Caja'], ['clientas', 'Clientas'], ['compras', 'Compras y stock'], ['calculador', 'Calculador de costos'], ['ajustes', 'Ajustes']];
+  const vistas = [['agenda', 'Agenda'], ['nuevo', 'Nuevo turno'], ['caja', 'Caja'], ['clientas', 'Clientas'], ['ventas', 'Ventas'], ['compras', 'Compras y stock'], ['calculador', 'Calculador de costos'], ['ajustes', 'Ajustes']];
   raiz.innerHTML = '<header class="top gut"><div class="col"><img src="' + LOGO + '" alt=""><span class="quien">' + esc(YO.nombre) + (YO.es_super ? ' · superusuario' : ' · administradora') + '</span>' +
     '<a href="' + PUBLICA + '" target="_blank" rel="noopener"><span class="largo">Ver página pública</span><span class="corto">Página</span></a><a href="manual.html" target="_blank" rel="noopener" id="ayuda">Ayuda</a><button type="button" id="mclave">Contraseña</button><button type="button" id="salir">Salir</button></div></header>' +
     '<nav class="tabs gut"><div class="col">' + vistas.map(([k, n]) => '<button type="button" data-v="' + k + '">' + n + '</button>').join('') + '</div></nav>' +
@@ -292,7 +305,7 @@ async function mostrar(v) {
   VISTA = v;
   $$('nav.tabs button').forEach((b) => b.setAttribute('aria-current', b.dataset.v === v ? 'page' : 'false'));
   const el = $('#vista'); el.innerHTML = '<p class="cargando">Cargando…</p>';
-  try { await ({ agenda: vAgenda, nuevo: vNuevo, caja: vCaja, clientas: vClientas, compras: vCompras, calculador: vCalculador, ajustes: vAjustes })[v](el); }
+  try { await ({ agenda: vAgenda, nuevo: vNuevo, caja: vCaja, clientas: vClientas, ventas: vVentas, compras: vCompras, calculador: vCalculador, ajustes: vAjustes })[v](el); }
   catch (e) { errorEn(el, e); }
 }
 
@@ -835,52 +848,280 @@ function filaPago(c, total, sufijo, cuentas) {
 }
 function armarPago(c, sufijo) { const s = $('#pm' + sufijo, c); const f = () => { $('#pcb' + sufijo, c).hidden = s.value === '1'; }; s.onchange = f; f(); }
 function leerPago(c, sufijo) { const m = +$('#pm' + sufijo, c).value; return [{ medio_pago_id: m, importe: +$('#pi' + sufijo, c).value || 0, cuenta_id: m === 1 ? null : +$('#pc' + sufijo, c).value || null }]; }
+// ---- Grillas (compras y ventas): filtros arriba, comprobantes abajo, acciones por línea
+const diasAtras = (n) => { const d = new Date(hoyISO() + 'T12:00:00'); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+let FCOMP = null, FVENT = null;
+const TIPO_COMP = { FAC: 'Factura', NC: 'Nota de crédito', BOR: 'En carga' };
+const TIPO_VENT = { VTA: 'Venta', NC: 'Nota de crédito', BOR: 'En carga' };
+const chipEstado = (e) => '<span class="chip ' + ({ Pagada: 'ok', 'Nota de crédito': 'info', Anulada: 'info', 'En carga': '' }[e] ?? 'mal') + '">' + esc(e) + '</span>';
+function selOpc(id, opciones, valor) { return '<select id="' + id + '">' + opciones.map(([v, n]) => '<option value="' + esc(v) + '"' + (String(valor) === String(v) ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select>'; }
 // ---- Compras
-async function kCompras(kv) {
-  const l = await rpc('compras_listar', { p_dias: 120 });
-  kv.innerHTML = '<div class="fila"><button class="btn" id="bnc">+ Cargar compra</button></div>' +
-    '<p class="aviso">Cargá la factura del proveedor (o, si no mandó, marcá "no mandó factura"). Al guardar se genera el <b>remito</b> que da entrada al stock y el costo de cada producto se actualiza.</p>' +
-    '<div class="lista" id="lcomp">' + (l.length ? l.map((x) => '<button type="button" class="item" data-cc="' + x.id + '"><span><b>' + esc(x.proveedor) + '</b> · ' + (x.tipo === 'NC' ? 'Nota de crédito ' : '') + esc(x.numero) +
-      '<br><span class="muted">' + fFecha(x.fecha) + (x.remitos.length ? ' · remito ' + x.remitos.map(esc).join(', ') : '') + '</span></span><b>' + (x.tipo === 'NC' ? '− ' : '') + plata(x.total) +
-      (x.saldo > 0 ? '<br><span class="chip mal">debe ' + plata(x.saldo) + '</span>' : (x.tipo === 'FAC' ? '<br><span class="chip ok">pagada</span>' : '')) + '</b></button>').join('') : '<p class="muted">Todavía no hay compras cargadas.</p>') + '</div>';
-  $('#bnc', kv).onclick = () => conBoton($('#bnc', kv), () => formCompra(kv));
-  $$('[data-cc]', kv).forEach((b) => b.onclick = () => conBoton(b, () => verCompra(+b.dataset.cc, kv)));
+async function kCompras(kv, aviso) {
+  const provs = await rpc('proveedores_listar');
+  if (!FCOMP) FCOMP = { desde: diasAtras(30), hasta: hoyISO(), proveedor_id: '', tipo: '', estado: '', texto: '' };
+  kv.innerHTML = (aviso || '') + '<div class="fila entre"><p class="muted">Primero se graba el encabezado de la factura; después se cargan los renglones buscando el código del proveedor. Al confirmar, el <b>remito</b> da entrada al stock.</p><button class="btn" id="bnc">+ Compra</button></div>' +
+    '<div class="filtros" id="fcomp"><div class="campo"><label for="fcd">Desde</label><input id="fcd" type="date" value="' + FCOMP.desde + '"></div>' +
+    '<div class="campo"><label for="fch">Hasta</label><input id="fch" type="date" value="' + FCOMP.hasta + '"></div>' +
+    '<div class="campo"><label for="fcp">Proveedor</label>' + selOpc('fcp', [['', 'Todos']].concat(provs.map((p) => [p.id, p.razon_social + (p.estado !== 'activo' ? ' (inactivo)' : '')])), FCOMP.proveedor_id) + '</div>' +
+    '<div class="campo"><label for="fct">Tipo</label>' + selOpc('fct', [['', 'Todos'], ['FAC', 'Facturas'], ['NC', 'Notas de crédito'], ['BOR', 'En carga']], FCOMP.tipo) + '</div>' +
+    '<div class="campo"><label for="fce">Estado</label>' + selOpc('fce', [['', 'Todos'], ['pendiente', 'Con saldo'], ['pagada', 'Pagadas'], ['anulada', 'Anuladas']], FCOMP.estado) + '</div>' +
+    '<div class="campo"><label for="fcn">Número</label><input id="fcn" value="' + esc(FCOMP.texto) + '" placeholder="Ej.: 777"></div>' +
+    '<button class="btn sec" id="fcb">Buscar</button></div><div id="gcomp"><p class="cargando">Cargando…</p></div>';
+  $('#bnc', kv).onclick = () => conBoton($('#bnc', kv), () => compraEncabezado(null, kv));
+  $('#fcb', kv).onclick = () => conBoton($('#fcb', kv), () => gridCompras(kv));
+  $('#fcn', kv).onkeydown = (e) => { if (e.key === 'Enter') gridCompras(kv); };
+  await gridCompras(kv);
 }
-async function formCompra(kv) {
-  const [provs, prods, mp] = await Promise.all([rpc('proveedores_listar'), rpc('compras_productos'), rpc('medios_para_pagar')]);
-  const activos = provs.filter((p) => p.estado === 'activo');
-  if (!activos.length) { modal('<h3>Cargar compra</h3><p class="aviso">Primero cargá el proveedor en "Proveedores".</p><button class="btn sec" onclick="cerrarModal()">Volver</button>'); return; }
-  if (!prods.length) { modal('<h3>Cargar compra</h3><p class="aviso">Primero cargá los productos en Calculador de costos → Insumos.</p><button class="btn sec" onclick="cerrarModal()">Volver</button>'); return; }
-  const opProd = '<option value="">Elegí…</option>' + prods.map((p) => '<option value="' + p.id + '">' + esc(p.nombre) + '</option>').join('');
-  const fila = () => '<div class="card rcomp"><div class="grilla"><div class="campo"><label>Producto</label><select class="rc-p">' + opProd + '</select></div>' +
-    '<div class="campo"><label>Cantidad <span>(envases)</span></label><input class="rc-c" type="number" min="0" step="any" inputmode="decimal"></div>' +
-    '<div class="campo"><label>Precio por envase <span>(lo que pagan)</span></label><input class="rc-u" type="number" min="0" step="0.01" inputmode="decimal"></div></div>' +
-    '<div class="fila entre"><span class="muted rc-s"></span><button type="button" class="btn sec chico rc-x">Sacar</button></div></div>';
-  const c = modal('<h3>Cargar compra</h3>' +
-    '<div class="campo"><label for="cprov">Proveedor</label><select id="cprov">' + activos.map((p) => '<option value="' + p.id + '">' + esc(p.razon_social) + '</option>').join('') + '</select></div>' +
-    '<label class="check"><input type="checkbox" id="csin"> El proveedor no mandó factura (el sistema le pone un número interno)</label>' +
-    '<div class="grilla" id="cfac"><div class="campo"><label for="clet">Letra</label><select id="clet"><option>C</option><option>B</option><option>A</option></select></div>' +
-    '<div class="campo"><label for="cpv">Punto de venta</label><input id="cpv" type="number" min="0" inputmode="numeric"></div>' +
-    '<div class="campo"><label for="cnum">Número</label><input id="cnum" inputmode="numeric"></div></div>' +
-    '<div class="campo"><label for="cfec">Fecha</label><input id="cfec" type="date" value="' + hoyISO() + '"></div>' +
-    '<h4>Productos</h4><div id="crs">' + fila() + '</div><button type="button" class="btn sec chico" id="cmas">+ Producto</button>' +
-    '<p class="total" id="ctot">Total $0</p>' +
-    '<div class="campo"><span class="lbl">¿Cómo se paga?</span><label class="check"><input type="radio" name="ccond" value="cuenta_corriente" checked> Queda en la cuenta del proveedor (se paga después)</label>' +
-    '<label class="check"><input type="radio" name="ccond" value="contado"> Se paga ahora</label></div><div id="cpago" hidden>' + filaPago(null, 0, 'C', mp.cuentas) + '</div>' +
-    '<div class="fila"><button class="btn" id="ok">Guardar compra</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
-  const tot = () => { let s = 0; $$('.rcomp', c).forEach((f) => { const v = Math.round((+$('.rc-c', f).value || 0) * (+$('.rc-u', f).value || 0) * 100) / 100; s += v; $('.rc-s', f).textContent = v ? 'Subtotal ' + plata(v) : ''; }); $('#ctot', c).textContent = 'Total ' + plata(s); if ($('#piC', c)) $('#piC', c).value = Math.round(s * 100) / 100; return s; };
-  const enlazar = () => { $$('.rcomp', c).forEach((f) => { $$('input,select', f).forEach((i) => i.oninput = tot); $('.rc-x', f).onclick = () => { if ($$('.rcomp', c).length > 1) { f.remove(); tot(); } }; }); };
-  $('#cmas', c).onclick = () => { $('#crs', c).insertAdjacentHTML('beforeend', fila()); enlazar(); }; enlazar();
-  $('#csin', c).onchange = () => { $('#cfac', c).hidden = $('#csin', c).checked; };
-  $$('input[name=ccond]', c).forEach((r) => r.onchange = () => { $('#cpago', c).hidden = $('input[name=ccond]:checked', c).value !== 'contado'; tot(); });
-  armarPago(c, 'C');
+async function gridCompras(kv) {
+  FCOMP = { desde: $('#fcd', kv).value, hasta: $('#fch', kv).value, proveedor_id: $('#fcp', kv).value, tipo: $('#fct', kv).value, estado: $('#fce', kv).value, texto: $('#fcn', kv).value.trim() };
+  const g = $('#gcomp', kv);
+  try {
+    const l = await rpc('compras_grilla', { f: FCOMP });
+    const tot = l.filter((x) => x.clase === 'comprobante').reduce((s, x) => s + (x.tipo === 'NC' ? -x.total : x.total), 0);
+    g.innerHTML = l.length ? '<table class="tgrid" id="tcomp"><thead><tr><th>Fecha</th><th>Tipo</th><th>Número</th><th>Proveedor</th><th class="n">Total</th><th class="n">Saldo</th><th>Estado</th><th></th></tr></thead><tbody>' +
+      l.map((x) => '<tr data-fila="' + x.clase + '-' + x.id + '"><td data-l="Fecha">' + fFecha(String(x.fecha).slice(0, 10)) + '</td><td data-l="Tipo">' + TIPO_COMP[x.tipo] + '</td>' +
+        '<td data-l="Número">' + esc(x.numero) + (x.origen ? '<br><span class="muted">de ' + esc(x.origen) + '</span>' : '') + (x.renglones != null ? '<br><span class="muted">' + x.renglones + ' renglones</span>' : '') + '</td>' +
+        '<td data-l="Proveedor">' + esc(x.proveedor) + '</td><td data-l="Total" class="n">' + (x.tipo === 'NC' ? '− ' : '') + plata(x.total) + '</td>' +
+        '<td data-l="Saldo" class="n">' + (x.saldo != null ? plata(x.saldo) : '') + '</td><td data-l="Estado">' + chipEstado(x.estado) + '</td><td class="acc">' +
+        (x.clase === 'borrador'
+          ? '<button class="btn chico" data-seg="' + x.id + '">Seguir cargando</button><button class="btn sec chico" data-desc="' + x.id + '">Descartar</button>'
+          : '<button class="btn sec chico" data-ver="' + x.id + '">Ver</button><button class="btn sec chico" data-edi="' + x.id + '">Editar</button>' + (x.puede_anular ? '<button class="btn sec chico" data-anu="' + x.id + '">Anular</button>' : '')) +
+        '</td></tr>').join('') + '</tbody></table><p class="muted">' + l.length + ' comprobantes · neto de facturas menos notas de crédito: <b>' + plata(tot) + '</b></p>'
+      : '<p class="muted">No hay comprobantes con esos filtros.</p>';
+    $$('[data-seg]', g).forEach((b) => b.onclick = () => conBoton(b, async () => compraEditor(await rpc('compra_borrador_ver', { p_id: +b.dataset.seg }), kv)));
+    $$('[data-desc]', g).forEach((b) => b.onclick = () => descartarCompra(+b.dataset.desc, kv));
+    $$('[data-ver]', g).forEach((b) => b.onclick = () => conBoton(b, () => verCompra(+b.dataset.ver, kv)));
+    $$('[data-edi]', g).forEach((b) => b.onclick = () => conBoton(b, () => editarCompra(+b.dataset.edi, kv)));
+    $$('[data-anu]', g).forEach((b) => b.onclick = () => conBoton(b, () => anularCompra(+b.dataset.anu, kv)));
+  } catch (e) { errorEn(g, e); }
+}
+async function compraEncabezado(b, kv) {
+  const provs = (await rpc('proveedores_listar')).filter((p) => p.estado === 'activo');
+  if (!provs.length) { modal('<h3>Compra nueva</h3><p class="aviso">Primero cargá el proveedor en "Proveedores".</p><button class="btn sec" onclick="cerrarModal()">Volver</button>'); return; }
+  b = b || { proveedor_id: provs[0].id, sin_factura: false, letra: 'C', punto_venta: '', numero: '', fecha: hoyISO(), condicion: 'cuenta_corriente' };
+  const c = modal('<h3>' + (b.id ? 'Encabezado de la compra' : 'Compra nueva · encabezado') + '</h3><p class="muted">Paso 1: los datos de la factura. Después se cargan los renglones.</p>' +
+    '<div class="campo"><label for="eprov">Proveedor</label>' + selOpc('eprov', provs.map((p) => [p.id, p.razon_social]), b.proveedor_id) + '</div>' +
+    '<label class="check"><input type="checkbox" id="esin"' + (b.sin_factura ? ' checked' : '') + '> El proveedor no mandó factura (el sistema le pone un número interno)</label>' +
+    '<div class="grilla" id="efac"' + (b.sin_factura ? ' hidden' : '') + '><div class="campo"><label for="elet">Letra</label>' + selOpc('elet', [['C', 'C'], ['B', 'B'], ['A', 'A']], b.letra || 'C') + '</div>' +
+    '<div class="campo"><label for="epv">Punto de venta</label><input id="epv" type="number" min="0" inputmode="numeric" value="' + (b.punto_venta ?? '') + '"></div>' +
+    '<div class="campo"><label for="enum">Número</label><input id="enum" inputmode="numeric" value="' + esc(b.numero || '') + '"></div></div>' +
+    '<div class="campo"><label for="efec">Fecha</label><input id="efec" type="date" value="' + String(b.fecha).slice(0, 10) + '"></div>' +
+    '<div class="campo"><span class="lbl">¿Cómo se paga?</span><label class="check"><input type="radio" name="econd" value="cuenta_corriente"' + (b.condicion !== 'contado' ? ' checked' : '') + '> Queda en la cuenta del proveedor (se paga después)</label>' +
+    '<label class="check"><input type="radio" name="econd" value="contado"' + (b.condicion === 'contado' ? ' checked' : '') + '> Se paga al confirmar</label></div>' +
+    '<div class="fila"><button class="btn" id="ok">' + (b.id ? 'Guardar' : 'Guardar y cargar renglones') + '</button><button class="btn sec" id="vol">Volver</button></div><div id="err"></div>');
+  $('#esin', c).onchange = () => { $('#efac', c).hidden = $('#esin', c).checked; };
+  $('#vol', c).onclick = () => b.id ? conBoton($('#vol', c), async () => compraEditor(await rpc('compra_borrador_ver', { p_id: b.id }), kv)) : cerrarModal();
   $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
-    const cond = $('input[name=ccond]:checked', c).value;
-    const p = { proveedor_id: +$('#cprov', c).value, sin_factura: $('#csin', c).checked, letra: $('#clet', c).value, punto_venta: $('#cpv', c).value, numero: $('#cnum', c).value,
-      fecha: $('#cfec', c).value, condicion: cond, items: $$('.rcomp', c).map((f) => ({ producto_id: $('.rc-p', f).value, cantidad: $('.rc-c', f).value, precio: $('.rc-u', f).value })) };
-    if (cond === 'contado') p.pagos = leerPago(c, 'C');
-    try { const r = await rpc('compra_cargar', { p }); cerrarModal(); await kCompras(kv);
-      kv.insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Compra ' + esc(r.numero) + ' guardada · total ' + plata(r.total) + '. El remito <b>' + esc(r.remito) + '</b> dio entrada al stock.</p>');
+    const p = { proveedor_id: +$('#eprov', c).value, sin_factura: $('#esin', c).checked, letra: $('#elet', c).value, punto_venta: $('#epv', c).value, numero: $('#enum', c).value,
+      fecha: $('#efec', c).value, condicion: $('input[name=econd]:checked', c).value };
+    if (b.id) p.id = b.id;
+    try { const r = await rpc('compra_borrador_guardar', { p }); compraEditor(r, kv); gridCompras(kv); } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+async function compraEditor(b, kv) {
+  const mp = b.condicion === 'contado' && b.items.length ? await rpc('medios_para_pagar') : { cuentas: [] };
+  const c = modal('<h3>Compra en carga · ' + esc(b.proveedor) + '</h3><p class="muted">' + esc(b.numero_txt) + ' · ' + fFecha(String(b.fecha).slice(0, 10)) + ' · ' + (b.condicion === 'contado' ? 'se paga al confirmar' : 'queda en la cuenta del proveedor') +
+    ' · <button type="button" class="enlace" id="eenc">cambiar encabezado</button></p>' +
+    '<h4>Renglones</h4>' + (b.items.length ? '<table class="tgrid" id="trc"><thead><tr><th>Código</th><th>Producto</th><th class="n">Cant.</th><th class="n">Precio</th><th class="n">Subtotal</th><th></th></tr></thead><tbody>' +
+      b.items.map((i) => '<tr><td data-l="Código">' + esc(i.codigo || '—') + '</td><td data-l="Producto">' + esc(i.producto) + '</td><td data-l="Cant." class="n">' + cantU(i.cantidad) + '</td><td data-l="Precio" class="n">' + plata(i.precio) + '</td>' +
+        '<td data-l="Subtotal" class="n">' + plata(i.subtotal) + '</td><td class="acc"><button class="btn sec chico" data-cr="' + i.id + '">Cambiar</button><button class="btn sec chico" data-qr="' + i.id + '">Quitar</button></td></tr>').join('') +
+      '</tbody></table>' : '<p class="muted">Todavía no hay renglones.</p>') + '<p class="total">Total ' + plata(b.total) + '</p>' +
+    '<div class="card"><h4>Agregar renglón</h4><div class="campo"><label for="rq">Código del proveedor o nombre</label><input id="rq" autocomplete="off" placeholder="' + (b.tiene_catalogo ? 'Ej.: 4522264 o crema' : 'Ej.: gasas') + '"></div><div id="rres" class="lista"></div><div id="rlin"></div></div>' +
+    (b.condicion === 'contado' && b.items.length ? '<h4>Pago</h4>' + filaPago(null, b.total, 'B', mp.cuentas) : '') +
+    '<div class="fila"><button class="btn" id="bconf"' + (b.items.length ? '' : ' disabled') + '>Confirmar compra</button><button class="btn sec" id="bdesp">Seguir después</button><button class="btn sec" id="bdes">Descartar</button></div><div id="err"></div>');
+  const recargar = (r) => { compraEditor(r, kv); gridCompras(kv); };
+  if ($('#pmB', c)) armarPago(c, 'B');
+  $('#eenc', c).onclick = () => compraEncabezado(b, kv);
+  $('#bdesp', c).onclick = () => { cerrarModal(); gridCompras(kv); };
+  $('#bdes', c).onclick = () => descartarCompra(b.id, kv);
+  $$('[data-qr]', c).forEach((x) => x.onclick = () => conBoton(x, async () => { try { recargar(await rpc('compra_borrador_item_quitar', { p_item: +x.dataset.qr })); } catch (e) { errorEn($('#err', c), e); } }));
+  $$('[data-cr]', c).forEach((x) => x.onclick = () => { const i = b.items.find((y) => y.id === +x.dataset.cr); formRenglon(c, b, { producto_id: i.producto_id, nombre: i.producto, codigo: i.codigo, precio: i.precio, unidad: i.unidad, contenido: i.contenido }, i, recargar); });
+  let tmo;
+  $('#rq', c).oninput = () => { clearTimeout(tmo); tmo = setTimeout(async () => {
+    const q = $('#rq', c).value.trim(); if (!q) { $('#rres', c).innerHTML = ''; return; }
+    try { const r = await rpc('compra_buscar', { p_proveedor: b.proveedor_id, p_texto: q });
+      $('#rres', c).innerHTML = r.length ? r.map((x, k) => '<button type="button" class="item" data-k="' + k + '"><span><b>' + esc(x.codigo || '') + '</b> ' + esc(x.nombre) +
+        (x.origen === 'catalogo' ? ' <span class="chip info">de la lista del proveedor</span>' : '') + (x.sin_codigo_proveedor ? ' <span class="chip">sin código de este proveedor</span>' : '') + '</span><span>' +
+        (x.precio != null ? plata(x.precio) : '') + (x.oferta ? '<br><span class="muted">oferta</span>' : '') + '</span></button>').join('') : '<p class="muted">No aparece. Si es un insumo nuevo, cargalo en Calculador de costos → Insumos.</p>';
+      $$('[data-k]', $('#rres', c)).forEach((y) => y.onclick = () => { $('#rres', c).innerHTML = ''; formRenglon(c, b, r[+y.dataset.k], null, recargar); });
+    } catch (e) { errorEn($('#rres', c), e); } }, 300); };
+  $('#bconf', c).onclick = () => conBoton($('#bconf', c), async () => {
+    const p = {}; if (b.condicion === 'contado') p.pagos = leerPago(c, 'B');
+    try { const r = await rpc('compra_borrador_confirmar', { p_id: b.id, p }); cerrarModal();
+      await kCompras(kv, '<p class="aviso ok" role="status">Compra ' + esc(r.numero) + ' confirmada · total ' + plata(r.total) + '. El remito <b>' + esc(r.remito) + '</b> dio entrada al stock.</p>');
+    } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+function formRenglon(c, b, x, item, listo) {
+  const nuevo = x.origen === 'catalogo';
+  $('#rlin', c).innerHTML = '<div class="aviso"><b>' + esc(x.nombre) + '</b>' + (nuevo ? '<br>Es nuevo: decí cómo se mide para darlo de alta como insumo.' : '') + '</div>' +
+    (nuevo ? '<div class="grilla"><div class="campo"><label for="lu">Se mide en</label>' + selOpc('lu', [['g', 'gramos'], ['ml', 'mililitros'], ['u', 'unidades']], 'g') + '</div>' +
+      '<div class="campo"><label for="lc">Cuánto trae el envase</label><input id="lc" type="number" min="0" step="any" inputmode="decimal" placeholder="Ej.: 250"></div></div>' : '') +
+    '<div class="grilla"><div class="campo"><label for="lcod">Código del proveedor</label><input id="lcod" value="' + esc(x.sin_codigo_proveedor ? '' : (x.codigo || '')) + '"' + (nuevo || (item && item.codigo) ? ' readonly' : '') + '></div>' +
+    '<div class="campo"><label for="lcan">Cantidad <span>(envases)</span></label><input id="lcan" type="number" min="0" step="any" inputmode="decimal" value="' + (item ? item.cantidad : '') + '"></div>' +
+    '<div class="campo"><label for="lpre">Precio por envase <span>(lo que pagan)</span></label><input id="lpre" type="number" min="0" step="0.01" inputmode="decimal" value="' + (item ? item.precio : (x.precio ?? '')) + '"></div></div>' +
+    '<div class="fila"><button class="btn" id="lok">' + (item ? 'Guardar renglón' : 'Agregar') + '</button><button class="btn sec" id="lno">Cancelar</button></div>';
+  $('#lcan', c).focus();
+  $('#lno', c).onclick = () => { $('#rlin', c).innerHTML = ''; };
+  $('#lok', c).onclick = () => conBoton($('#lok', c), async () => {
+    const p = { borrador_id: b.id, cantidad: $('#lcan', c).value, precio: $('#lpre', c).value, codigo: $('#lcod', c).value };
+    if (item) p.id = item.id;
+    if (nuevo) { p.catalogo_id = x.catalogo_id; p.unidad = $('#lu', c).value; p.contenido = $('#lc', c).value; } else p.producto_id = x.producto_id;
+    try { listo(await rpc('compra_borrador_item_guardar', { p })); } catch (e) { errorEn($('#err', c), e); $('#err', c).scrollIntoView({ block: 'nearest' }); }
+  });
+}
+function descartarCompra(id, kv) {
+  const c = modal('<h3>Descartar la compra en carga</h3><p class="muted">No se borra: queda como descartada con el motivo.</p><div class="campo"><label for="dmot">Motivo</label><input id="dmot" placeholder="Ej.: la cargué dos veces"></div>' +
+    '<div class="fila"><button class="btn" id="ok">Descartar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    try { await rpc('compra_borrador_descartar', { p_id: id, p_motivo: $('#dmot', c).value }); cerrarModal(); await kCompras(kv, '<p class="aviso ok" role="status">Compra en carga descartada.</p>'); } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+async function editarCompra(id, kv) {
+  const x = await rpc('compra_ver', { p_id: id });
+  const interno = /(^|\s)(CI|NCI)-/.test(x.numero);
+  const m = /^([ABCX]) (?:(\d{4})-)?(.*)$/.exec(x.numero) || [];
+  const c = modal('<h3>Editar · ' + esc(x.proveedor) + ' · ' + esc(x.numero) + '</h3><p class="muted">Se corrigen los datos del comprobante. Los productos e importes no se cambian: si algo vino mal, anulala (nota de crédito) y cargala de nuevo.</p>' +
+    (interno ? '<p class="aviso">Es un comprobante interno: su número no se cambia.</p>' : '<div class="grilla"><div class="campo"><label for="xlet">Letra</label>' + selOpc('xlet', [['C', 'C'], ['B', 'B'], ['A', 'A']], m[1] || 'C') + '</div>' +
+      '<div class="campo"><label for="xpv">Punto de venta</label><input id="xpv" type="number" min="0" inputmode="numeric" value="' + (m[2] ? +m[2] : '') + '"></div>' +
+      '<div class="campo"><label for="xnum">Número</label><input id="xnum" value="' + esc(m[3] || '') + '"></div></div>') +
+    '<div class="campo"><label for="xfec">Fecha</label><input id="xfec" type="date" value="' + String(x.fecha).slice(0, 10) + '"></div>' +
+    '<div class="fila"><button class="btn" id="ok">Guardar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    const p = { id, fecha: $('#xfec', c).value };
+    if (!interno) { p.letra = $('#xlet', c).value; p.punto_venta = $('#xpv', c).value; p.numero = $('#xnum', c).value; }
+    try { const r = await rpc('compra_editar', { p }); cerrarModal(); await kCompras(kv, '<p class="aviso ok" role="status">Comprobante corregido: ' + esc(r.numero) + '.</p>'); } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+async function anularCompra(id, kv) {
+  const x = await rpc('compra_ver', { p_id: id });
+  const c = modal('<h3>Anular · ' + esc(x.proveedor) + ' · ' + esc(x.numero) + '</h3><p class="muted">No se borra: se genera una <b>nota de crédito</b> por lo que queda de la factura y la cuenta del proveedor se ajusta sola.</p>' +
+    '<div class="campo"><label for="amot">Motivo</label><input id="amot" placeholder="Ej.: la factura vino mal"></div>' +
+    '<label class="check"><input type="checkbox" id="adev" checked> Se devuelve la mercadería (sale del stock con un remito de devolución)</label>' +
+    '<div class="fila"><button class="btn" id="ok">Anular con nota de crédito</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    try { const r = await rpc('compra_anular', { p_id: id, p_motivo: $('#amot', c).value, p_devuelve: $('#adev', c).checked }); cerrarModal();
+      await kCompras(kv, '<p class="aviso ok" role="status">Anulada con la nota de crédito ' + esc(r.numero) + ' por ' + plata(r.total) + (r.remito ? '. El remito ' + esc(r.remito) + ' sacó la mercadería del stock.' : '.') + '</p>');
+    } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+// ---- Ventas
+async function vVentas(el, aviso) {
+  if (!FVENT) FVENT = { desde: diasAtras(30), hasta: hoyISO(), texto: '', tipo: '', estado: '', condicion: '' };
+  el.innerHTML = '<div class="vista"><h2>Ventas</h2>' + (aviso || '') + '<div class="fila entre"><p class="muted">Todas las ventas: las de los turnos cobrados y las de mostrador. Con <b>+ Venta</b> se elige la clienta y después se cargan los renglones buscando el código o el nombre.</p><button class="btn" id="bnv">+ Venta</button></div>' +
+    '<div class="filtros" id="fvent"><div class="campo"><label for="fvd">Desde</label><input id="fvd" type="date" value="' + FVENT.desde + '"></div>' +
+    '<div class="campo"><label for="fvh">Hasta</label><input id="fvh" type="date" value="' + FVENT.hasta + '"></div>' +
+    '<div class="campo"><label for="fvx">Clienta o número</label><input id="fvx" value="' + esc(FVENT.texto) + '" placeholder="Ej.: Sofía"></div>' +
+    '<div class="campo"><label for="fvt">Tipo</label>' + selOpc('fvt', [['', 'Todos'], ['VTA', 'Ventas'], ['NC', 'Notas de crédito'], ['BOR', 'En carga']], FVENT.tipo) + '</div>' +
+    '<div class="campo"><label for="fve">Estado</label>' + selOpc('fve', [['', 'Todos'], ['pendiente', 'Con saldo'], ['pagada', 'Pagadas'], ['anulada', 'Anuladas']], FVENT.estado) + '</div>' +
+    '<div class="campo"><label for="fvc">Condición</label>' + selOpc('fvc', [['', 'Todas'], ['contado', 'Contado'], ['cuenta_corriente', 'Cuenta corriente']], FVENT.condicion) + '</div>' +
+    '<button class="btn sec" id="fvb">Buscar</button></div><div id="gvent"><p class="cargando">Cargando…</p></div></div>';
+  $('#bnv', el).onclick = () => ventaEncabezado(el);
+  $('#fvb', el).onclick = () => conBoton($('#fvb', el), () => gridVentas(el));
+  $('#fvx', el).onkeydown = (e) => { if (e.key === 'Enter') gridVentas(el); };
+  await gridVentas(el);
+}
+async function gridVentas(el) {
+  FVENT = { desde: $('#fvd', el).value, hasta: $('#fvh', el).value, texto: $('#fvx', el).value.trim(), tipo: $('#fvt', el).value, estado: $('#fve', el).value, condicion: $('#fvc', el).value };
+  const g = $('#gvent', el);
+  try {
+    const l = await rpc('ventas_grilla', { f: FVENT });
+    const tot = l.filter((x) => x.clase === 'comprobante').reduce((s, x) => s + (x.tipo === 'NC' ? -x.total : x.total), 0);
+    g.innerHTML = l.length ? '<table class="tgrid" id="tvent"><thead><tr><th>Fecha</th><th>Tipo</th><th>Número</th><th>Clienta</th><th>Detalle</th><th class="n">Total</th><th class="n">Saldo</th><th>Estado</th><th></th></tr></thead><tbody>' +
+      l.map((x) => '<tr data-fila="' + x.clase + '-' + x.id + '"><td data-l="Fecha">' + fFecha(String(x.fecha).slice(0, 10)) + '</td><td data-l="Tipo">' + TIPO_VENT[x.tipo] + '</td>' +
+        '<td data-l="Número">' + esc(x.numero) + (x.origen ? '<br><span class="muted">de ' + esc(x.origen) + '</span>' : '') + '</td><td data-l="Clienta">' + esc(x.clienta) + '</td>' +
+        '<td data-l="Detalle">' + esc(x.detalle || (x.renglones != null ? x.renglones + ' renglones' : '')) + '</td><td data-l="Total" class="n">' + (x.tipo === 'NC' ? '− ' : '') + plata(x.total) + '</td>' +
+        '<td data-l="Saldo" class="n">' + (x.saldo != null ? plata(x.saldo) : '') + '</td><td data-l="Estado">' + chipEstado(x.estado) + (x.condicion === 'cuenta_corriente' && x.tipo !== 'NC' ? '<br><span class="muted">cuenta corriente</span>' : '') + '</td><td class="acc">' +
+        (x.clase === 'borrador'
+          ? '<button class="btn chico" data-seg="' + x.id + '">Seguir cargando</button><button class="btn sec chico" data-desc="' + x.id + '">Descartar</button>'
+          : '<button class="btn sec chico" data-ver="' + x.id + '">Ver</button>' + (x.puede_anular ? '<button class="btn sec chico" data-anu="' + x.id + '">Anular</button>' : '')) +
+        '</td></tr>').join('') + '</tbody></table><p class="muted">' + l.length + ' comprobantes · ventas menos notas de crédito: <b>' + plata(tot) + '</b></p>'
+      : '<p class="muted">No hay ventas con esos filtros.</p>';
+    $$('[data-seg]', g).forEach((b) => b.onclick = () => conBoton(b, () => ventaEditor(+b.dataset.seg, el)));
+    $$('[data-desc]', g).forEach((b) => b.onclick = () => descartarVenta(+b.dataset.desc, el));
+    $$('[data-ver]', g).forEach((b) => b.onclick = () => conBoton(b, () => verVenta(+b.dataset.ver, el)));
+    $$('[data-anu]', g).forEach((b) => b.onclick = () => conBoton(b, () => anularVenta(+b.dataset.anu, el)));
+  } catch (e) { errorEn(g, e); }
+}
+function ventaEncabezado(el) {
+  let cli = null;
+  const c = modal('<h3>Venta nueva · encabezado</h3><p class="muted">Paso 1: la clienta y cómo paga. Después se cargan los renglones.</p>' +
+    '<div class="campo"><label for="vbc">Clienta</label><input id="vbc" autocomplete="off" placeholder="Nombre o celular"></div><div id="vbr" class="lista"></div><p id="vbe"></p>' +
+    '<div class="campo"><span class="lbl">¿Cómo paga?</span><label class="check"><input type="radio" name="vcond" value="contado" checked> Paga todo ahora (contado)</label>' +
+    '<label class="check"><input type="radio" name="vcond" value="cuenta_corriente"> Cuenta corriente (paga una parte o nada)</label></div>' +
+    '<div class="fila"><button class="btn" id="ok" disabled>Guardar y cargar renglones</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  let tmo;
+  $('#vbc', c).oninput = () => { clearTimeout(tmo); tmo = setTimeout(async () => {
+    const q = $('#vbc', c).value.trim(); if (q.length < 2) { $('#vbr', c).innerHTML = ''; return; }
+    try { const r = await rpc('buscar_clientas', { p_texto: q });
+      $('#vbr', c).innerHTML = r.length ? r.map((x) => '<button type="button" class="item" data-c="' + x.id + '"><span><b>' + esc(x.nombre) + '</b> <span class="muted">' + esc((x.celular || '').replace('+549', '')) + '</span></span></button>').join('') : '<p class="muted">No está: cargala primero en Clientas.</p>';
+      $$('[data-c]', $('#vbr', c)).forEach((b) => b.onclick = () => { cli = r.find((x) => x.id === +b.dataset.c); $('#vbr', c).innerHTML = ''; $('#vbc', c).value = cli.nombre; $('#vbe', c).innerHTML = '<span class="chip ok">' + esc(cli.nombre) + '</span>'; $('#ok', c).disabled = false; });
+    } catch (e) { errorEn($('#vbr', c), e); } }, 300); };
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    try { const id = await rpc('borrador_guardar', { p: { cliente_id: cli.id, condicion: $('input[name=vcond]:checked', c).value } }); await ventaEditor(id, el); gridVentas(el); } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+async function ventaEditor(id, el) {
+  const b = await rpc('borrador_detalle', { p_id: id });
+  const total = b.totales && b.totales.total != null ? b.totales.total : 0;
+  const fin = (i) => Math.round(i.subtotal_neto * (1 + i.iva_pct / 100) * 100) / 100;
+  const c = modal('<h3>Venta en carga · ' + esc(b.cliente) + '</h3><p class="muted">' + (b.condicion === 'contado' ? 'Paga todo ahora (contado)' : 'Cuenta corriente') + '</p>' +
+    '<h4>Renglones</h4>' + (b.items.length ? '<table class="tgrid" id="trv"><thead><tr><th>Código</th><th>Producto o servicio</th><th class="n">Cant.</th><th class="n">Subtotal</th><th></th></tr></thead><tbody>' +
+      b.items.map((i) => '<tr><td data-l="Código">' + esc(i.codigo || '') + '</td><td data-l="Producto">' + esc(i.producto) + '</td><td data-l="Cant." class="n">' + cantU(i.cantidad) + '</td><td data-l="Subtotal" class="n">' + plata(fin(i)) + '</td>' +
+        '<td class="acc"><button class="btn sec chico" data-qv="' + i.id + '">Quitar</button></td></tr>').join('') + '</tbody></table>' : '<p class="muted">Todavía no hay renglones.</p>') +
+    (b.totales && b.totales.error ? '<p class="aviso error" role="alert">' + esc(b.totales.error) + '</p>' : '') + '<p class="total">Total ' + plata(total) + '</p>' +
+    '<div class="card"><h4>Agregar renglón</h4><div class="campo"><label for="vq">Código o nombre</label><input id="vq" autocomplete="off" placeholder="Ej.: semipermanente"></div><div id="vres" class="lista"></div><div id="vlin"></div></div>' +
+    (b.items.length ? '<h4>' + (b.condicion === 'contado' ? 'Cómo paga' : 'Cuánto paga ahora (lo que falte queda en su cuenta)') + '</h4><div class="grilla">' +
+      MEDIOS_PAGO.map((m) => '<div class="campo"><label for="vp' + m.id + '">' + m.n + '</label><input id="vp' + m.id + '" type="number" min="0" step="0.01" inputmode="decimal" value="' + (m.id === 1 && b.condicion === 'contado' ? total : 0) + '"></div>').join('') + '</div>' : '') +
+    '<div class="fila"><button class="btn" id="vconf"' + (b.items.length ? '' : ' disabled') + '>Confirmar venta</button><button class="btn sec" id="vdesp">Seguir después</button><button class="btn sec" id="vdes">Descartar</button></div><div id="err"></div>');
+  $('#vdesp', c).onclick = () => { cerrarModal(); gridVentas(el); };
+  $('#vdes', c).onclick = () => descartarVenta(id, el);
+  $$('[data-qv]', c).forEach((x) => x.onclick = () => conBoton(x, async () => { try { await rpc('borrador_item_quitar', { p_item: +x.dataset.qv }); await ventaEditor(id, el); gridVentas(el); } catch (e) { errorEn($('#err', c), e); } }));
+  let tmo;
+  $('#vq', c).oninput = () => { clearTimeout(tmo); tmo = setTimeout(async () => {
+    const q = $('#vq', c).value.trim(); if (!q) { $('#vres', c).innerHTML = ''; return; }
+    try { const r = await rpc('ventas_buscar_productos', { p_texto: q });
+      $('#vres', c).innerHTML = r.length ? r.map((x, k) => '<button type="button" class="item" data-k="' + k + '"><span><b>' + esc(x.codigo || '') + '</b> ' + esc(x.nombre) + (x.controla_stock ? ' <span class="muted">· hay ' + cantU(x.stock) + '</span>' : '') + '</span><span>' + plata(x.precio) + '</span></button>').join('') : '<p class="muted">No aparece (o no tiene precio de venta).</p>';
+      $$('[data-k]', $('#vres', c)).forEach((y) => y.onclick = () => { const x = r[+y.dataset.k]; $('#vres', c).innerHTML = '';
+        $('#vlin', c).innerHTML = '<div class="aviso"><b>' + esc(x.nombre) + '</b> · ' + plata(x.precio) + '</div><div class="grilla"><div class="campo"><label for="vcan">Cantidad</label><input id="vcan" type="number" min="0" step="any" inputmode="decimal" value="1"></div></div>' +
+          '<div class="fila"><button class="btn" id="vok">Agregar</button><button class="btn sec" id="vno">Cancelar</button></div>';
+        $('#vno', c).onclick = () => { $('#vlin', c).innerHTML = ''; };
+        $('#vok', c).onclick = () => conBoton($('#vok', c), async () => { try { await rpc('borrador_item_guardar', { p: { borrador_id: id, producto_id: x.producto_id, cantidad: $('#vcan', c).value } }); await ventaEditor(id, el); gridVentas(el); } catch (e) { errorEn($('#err', c), e); $('#err', c).scrollIntoView({ block: 'nearest' }); } });
+      });
+    } catch (e) { errorEn($('#vres', c), e); } }, 300); };
+  $('#vconf', c).onclick = () => conBoton($('#vconf', c), async () => {
+    const pagos = MEDIOS_PAGO.map((m) => ({ medio_pago_id: m.id, importe: $('#vp' + m.id, c).value })).filter((x) => x.importe !== '' && +x.importe !== 0);
+    try { const r = await rpc('venta_borrador_confirmar', { p_id: id, p: { pagos } }); cerrarModal();
+      await vVentas(el, '<p class="aviso ok" role="status">Venta ' + esc(r.numero) + ' confirmada · total ' + plata(r.total) + (r.queda_debiendo > 0 ? ' · queda debiendo ' + plata(r.queda_debiendo) + ' en su cuenta corriente' : '') + '.</p>');
+    } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+function descartarVenta(id, el) {
+  const c = modal('<h3>Descartar la venta en carga</h3><p class="muted">No se borra: queda como descartada con el motivo.</p><div class="campo"><label for="dmot">Motivo</label><input id="dmot" placeholder="Ej.: la clienta no la llevó"></div>' +
+    '<div class="fila"><button class="btn" id="ok">Descartar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    if (!$('#dmot', c).value.trim()) { errorEn($('#err', c), 'Escribí por qué se descarta.'); return; }
+    try { await rpc('borrador_descartar', { p_id: id, p_motivo: $('#dmot', c).value }); cerrarModal(); await vVentas(el, '<p class="aviso ok" role="status">Venta en carga descartada.</p>'); } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+async function verVenta(id, el) {
+  const x = await rpc('comprobante_detalle', { p_id: id });
+  modal('<h3>' + esc(x.numero) + ' · ' + esc(x.cliente.nombre) + '</h3><p class="muted">' + fFecha(String(x.fecha).slice(0, 10)) + ' · ' + (x.condicion === 'contado' ? 'contado' : 'cuenta corriente') + (x.origen ? ' · de ' + esc(x.origen.numero) : '') + (x.motivo ? ' · ' + esc(x.motivo) : '') + '</p>' +
+    '<table class="tabla"><tr><th>Detalle</th><th class="n">Cant.</th><th class="n">Total</th></tr>' + x.items.map((i) => '<tr><td>' + esc(i.producto) + (i.devuelto > 0 ? '<br><span class="muted">acreditado ' + cantU(i.devuelto) + '</span>' : '') + '</td><td class="n">' + cantU(i.cantidad) + '</td><td class="n">' + plata(i.total) + '</td></tr>').join('') +
+    '<tr><th colspan="2">Total</th><th class="n">' + plata(x.total) + '</th></tr>' + (x.tipo === 'VTA' ? '<tr><td colspan="2">Saldo</td><td class="n"><b>' + plata(x.saldo) + '</b></td></tr>' : '') + '</table>' +
+    (x.pagos.length ? '<p>Pagos: ' + x.pagos.map((p) => esc(p.recibo) + ' ' + plata(p.importe) + (p.estado !== 'emitido' ? ' (anulado)' : '')).join(' · ') + '</p>' : '') +
+    (x.notas_credito.length ? '<p>Notas de crédito: ' + x.notas_credito.map((n) => esc(n.numero) + ' ' + plata(n.importe)).join(' · ') + '</p>' : '') +
+    '<p class="muted">Una venta emitida no se modifica: si algo está mal, se anula con nota de crédito y se carga de nuevo.</p><div class="fila"><button class="btn sec" onclick="cerrarModal()">Volver</button></div>');
+}
+async function anularVenta(id, el) {
+  const x = await rpc('comprobante_detalle', { p_id: id });
+  const c = modal('<h3>Anular · ' + esc(x.numero) + ' · ' + esc(x.cliente.nombre) + '</h3><p class="muted">No se borra: se genera una <b>nota de crédito</b> por lo que queda. Si ya pagó, lo pagado le queda <b>a favor</b> para la próxima.</p>' +
+    '<div class="campo"><label for="amot">Motivo</label><input id="amot" placeholder="Ej.: se cobró de más"></div>' +
+    '<label class="check"><input type="checkbox" id="adev" checked> Si había productos, vuelven al stock</label>' +
+    '<div class="fila"><button class="btn" id="ok">Anular con nota de crédito</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    try { const r = await rpc('venta_anular', { p_id: id, p_motivo: $('#amot', c).value, p_devuelve: $('#adev', c).checked }); cerrarModal();
+      await vVentas(el, '<p class="aviso ok" role="status">Anulada con la ' + esc(r.numero) + ' por ' + plata(r.total) + (r.queda_a_favor > 0 ? ' · le quedan ' + plata(r.queda_a_favor) + ' a favor' : '') + '.</p>');
     } catch (e) { errorEn($('#err', c), e); }
   });
 }
