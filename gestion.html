@@ -220,6 +220,7 @@ const EST = { pendiente_sena: ['Esperando seña', ''], sena_a_verificar: ['Seña
   cancelado_fuera_termino: ['Anulado fuera de término', 'mal'], cancelado_por_centro: ['Cancelado por el centro', 'mal'], ausente: ['Ausente', 'mal'], reprogramado: ['Reprogramado', ''] };
 const MEDIOS = [{ id: 1, n: 'Efectivo' }, { id: 2, n: 'Transferencia' }];
 
+let SIN_STOCK = [];
 let YO = null, CENTRO = null, VISTA = 'agenda', FECHA = hoyISO();
 
 async function rpc(fn, args) {
@@ -276,7 +277,7 @@ async function arrancar() {
   if (!data.session) return pantallaLogin();
   try { YO = await rpc('mi_usuario'); } catch (e) { return pantallaLogin(e.message); }
   if (!YO || !YO.es_admin) { await sb.auth.signOut(); return pantallaLogin('Ese usuario no tiene acceso a la gestión.'); }
-  const vistas = [['agenda', 'Agenda'], ['nuevo', 'Nuevo turno'], ['caja', 'Caja'], ['clientas', 'Clientas'], ['calculador', 'Calculador de costos'], ['ajustes', 'Ajustes']];
+  const vistas = [['agenda', 'Agenda'], ['nuevo', 'Nuevo turno'], ['caja', 'Caja'], ['clientas', 'Clientas'], ['compras', 'Compras y stock'], ['calculador', 'Calculador de costos'], ['ajustes', 'Ajustes']];
   raiz.innerHTML = '<header class="top gut"><div class="col"><img src="' + LOGO + '" alt=""><span class="quien">' + esc(YO.nombre) + (YO.es_super ? ' · superusuario' : ' · administradora') + '</span>' +
     '<a href="' + PUBLICA + '" target="_blank" rel="noopener"><span class="largo">Ver página pública</span><span class="corto">Página</span></a><a href="manual.html" target="_blank" rel="noopener" id="ayuda">Ayuda</a><button type="button" id="mclave">Contraseña</button><button type="button" id="salir">Salir</button></div></header>' +
     '<nav class="tabs gut"><div class="col">' + vistas.map(([k, n]) => '<button type="button" data-v="' + k + '">' + n + '</button>').join('') + '</div></nav>' +
@@ -291,7 +292,7 @@ async function mostrar(v) {
   VISTA = v;
   $$('nav.tabs button').forEach((b) => b.setAttribute('aria-current', b.dataset.v === v ? 'page' : 'false'));
   const el = $('#vista'); el.innerHTML = '<p class="cargando">Cargando…</p>';
-  try { await ({ agenda: vAgenda, nuevo: vNuevo, caja: vCaja, clientas: vClientas, calculador: vCalculador, ajustes: vAjustes })[v](el); }
+  try { await ({ agenda: vAgenda, nuevo: vNuevo, caja: vCaja, clientas: vClientas, compras: vCompras, calculador: vCalculador, ajustes: vAjustes })[v](el); }
   catch (e) { errorEn(el, e); }
 }
 
@@ -383,11 +384,12 @@ async function vSemana(el) {
 }
 async function vAgenda(el) {
   if (MODO_AG === 'semana') return vSemana(el);
-  AG = await rpc('agenda_dia', { p_fecha: FECHA });
-  CENTRO = AG.centro;
+  const [ag, sinStock] = await Promise.all([rpc('agenda_dia', { p_fecha: FECHA }), rpc('servicios_sin_stock').catch(() => [])]);
+  AG = ag; CENTRO = AG.centro; SIN_STOCK = sinStock;
   const activos = AG.turnos.filter((t) => !/cancelado|vencido|rechazado/.test(t.estado));
   const bajas = AG.turnos.filter((t) => /cancelado|vencido|rechazado/.test(t.estado));
   let h = '<div class="vista">' + modoAgHtml();
+  if (SIN_STOCK.length) h += '<p class="aviso error" role="alert" id="avisoStock">Sin stock para: ' + SIN_STOCK.map((x) => '<b>' + esc(x.servicio) + '</b> (falta ' + x.faltan.map(esc).join(', ') + ')').join(' · ') + '. Cargá el ingreso en Compras y stock: sin stock no se puede cobrar.</p>';
   if (!AG.caja_abierta) h += '<div class="aviso fila entre"><span>La caja está <b>cerrada</b>. Abrila para cobrar.</span><button class="btn chico" id="irCaja">Abrir caja</button></div>';
   if (!CENTRO.whatsapp || !CENTRO.alias) h += '<p class="aviso">Falta cargar ' + [!CENTRO.whatsapp && 'el WhatsApp del centro', !CENTRO.alias && 'el alias para las señas'].filter(Boolean).join(' y ') + ' (Ajustes → Configuración, lo carga el superusuario).</p>';
   if (AG.senas_pendientes.length) h += '<section class="card" style="border-color:#c9a227"><h3>Señas para controlar (' + AG.senas_pendientes.length + ')</h3><div class="lista">' + AG.senas_pendientes.map((t) => turnoHtml(t, true)).join('') + '</div></section>';
@@ -460,18 +462,30 @@ async function cobrar(t) {
     }
   }
   const aFavor = Math.min(t.a_favor_clienta || 0, t.total), resto = Math.max(0, Math.round((t.total - aFavor) * 100) / 100);
+  const cons = await rpc('turno_consumos_ver', { p_turno: t.id });
   const c = modal('<h3>Cobrar · ' + esc(t.cliente.nombre) + '</h3>' + itemsHtml(t) + '<table class="tabla"><tr><td>Total</td><td class="n">' + plata(t.total) + '</td></tr>' +
     '<tr><td>Seña y saldo a favor</td><td class="n">− ' + plata(aFavor) + '</td></tr><tr><td><b>A cobrar</b></td><td class="n total" id="resto">' + plata(resto) + '</td></tr></table>' +
-    (resto > 0 ? MEDIOS.map((m) => '<div class="campo"><label for="m' + m.id + '">' + m.n + '</label><input id="m' + m.id + '" type="number" min="0" step="0.01" inputmode="decimal" value="' + (m.id === 1 ? resto : 0) + '"></div>').join('') +
+    (resto > 0 ? '<div class="campo"><span class="lbl">¿Cómo paga?</span><label class="check"><input type="radio" name="cond" value="contado" checked> Paga ahora (contado)</label>' +
+      '<label class="check"><input type="radio" name="cond" value="cuenta_corriente"> Cuenta corriente: paga una parte o nada, el resto queda debiendo</label></div>' +
+      MEDIOS_PAGO.map((m) => '<div class="campo"><label for="m' + m.id + '">' + m.n + '</label><input id="m' + m.id + '" type="number" min="0" step="0.01" inputmode="decimal" value="' + (m.id === 1 ? resto : 0) + '"></div>').join('') +
       '<p class="muted" id="cuenta"></p>' : '<p class="aviso ok">La seña cubre todo: no hay que cobrar nada.</p>') +
+    (cons.length ? '<h4>Insumos que se descuentan del stock</h4><p class="muted">Si hoy se usó distinto, corregí la cantidad.</p>' + cons.map((x) => '<div class="campo"><label for="cs' + x.producto_id + '">' + esc(x.nombre) + ' <span>(' + esc(x.unidad) + ' · hay ' + cantU(x.stock_uso) + ')</span></label><input id="cs' + x.producto_id + '" class="cons" data-p="' + x.producto_id + '" data-orig="' + x.cantidad + '" type="number" min="0" step="any" inputmode="decimal" value="' + x.cantidad + '">' + (x.alcanza ? '' : '<p class="aviso error" role="alert">Sin stock suficiente: cargá el ingreso en Compras y stock antes de cobrar.</p>') + '</div>').join('') : '') +
     '<div class="fila"><button class="btn ok" id="ok">Cobrar y terminar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
-  const leer = () => MEDIOS.map((m) => ({ medio_pago_id: m.id, importe: +(($('#m' + m.id, c) || {}).value || 0) })).filter((p) => p.importe > 0);
-  const act = () => { if (!$('#cuenta', c)) return; const s = leer().reduce((a, p) => a + p.importe, 0); $('#cuenta', c).textContent = Math.abs(s - resto) < 0.005 ? 'Coincide con lo que hay que cobrar.' : 'Cargado ' + plata(s) + ': tiene que sumar ' + plata(resto) + '.'; };
-  $$('input', c).forEach((i) => i.oninput = act); act();
+  const leer = () => MEDIOS_PAGO.map((m) => ({ medio_pago_id: m.id, importe: +(($('#m' + m.id, c) || {}).value || 0) })).filter((p) => p.importe > 0);
+  const cond = () => (($('input[name=cond]:checked', c) || {}).value || 'contado');
+  const act = () => { if (!$('#cuenta', c)) return; const s = leer().reduce((a, p) => a + p.importe, 0);
+    $('#cuenta', c).textContent = cond() === 'cuenta_corriente' ? (s > resto + 0.005 ? 'Cargado ' + plata(s) + ': es más de lo que hay que cobrar.' : 'Paga ' + plata(s) + ' y queda debiendo ' + plata(resto - s) + '.')
+      : (Math.abs(s - resto) < 0.005 ? 'Coincide con lo que hay que cobrar.' : 'Cargado ' + plata(s) + ': tiene que sumar ' + plata(resto) + '.'); };
+  $$('input', c).forEach((i) => i.oninput = act);
+  $$('input[name=cond]', c).forEach((r) => r.onchange = () => { if (cond() === 'cuenta_corriente') MEDIOS_PAGO.forEach((m) => { if ($('#m' + m.id, c)) $('#m' + m.id, c).value = 0; }); else if ($('#m1', c)) $('#m1', c).value = resto; act(); });
+  act();
   $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
     try {
-      const r = await rpc('turno_cobrar', { p_turno: t.id, p: { pagos: resto > 0 ? leer() : [] } });
-      modal('<h3>Cobrado ✓</h3><p>Venta <b>' + esc(r.cobro.venta) + '</b> · total ' + plata(r.cobro.total) + '</p><p>Seña y a favor: ' + plata(r.cobro.sena_y_a_favor) + ' · cobrado ahora: <b>' + plata(r.cobro.cobrado) + '</b>' + (r.cobro.recibo ? ' · recibo ' + esc(r.cobro.recibo) : '') + '</p><p class="muted">Comprobante no válido como factura.</p><button class="btn" id="fin">Listo</button>');
+      const consumos = $$('.cons', c).filter((i) => i.value !== i.dataset.orig).map((i) => ({ producto_id: +i.dataset.p, cantidad: +i.value || 0 }));
+      const r = await rpc('turno_cobrar', { p_turno: t.id, p: Object.assign({ condicion: cond(), pagos: resto > 0 ? leer() : [] }, consumos.length ? { consumos } : {}) });
+      modal('<h3>Cobrado ✓</h3><p>Venta <b>' + esc(r.cobro.venta) + '</b> · total ' + plata(r.cobro.total) + '</p><p>Seña y a favor: ' + plata(r.cobro.sena_y_a_favor) + ' · cobrado ahora: <b>' + plata(r.cobro.cobrado) + '</b>' + (r.cobro.recibo ? ' · recibo ' + esc(r.cobro.recibo) : '') + '</p>' +
+        (r.cobro.queda_debiendo > 0 ? '<p class="aviso">Queda debiendo <b>' + plata(r.cobro.queda_debiendo) + '</b> en su cuenta corriente (Clientas → su ficha → Cobrar deuda).</p>' : '') +
+        '<div class="fila"><button class="btn" id="fin">Listo</button></div>');
       $('#fin').onclick = () => { cerrarModal(); mostrar(VISTA); };
     } catch (e) { errorEn($('#err', c), e); }
   });
@@ -523,6 +537,7 @@ async function reprogramar(t) {
 
 // =============================================================== Nuevo turno
 async function vNuevo(el) {
+  SIN_STOCK = await rpc('servicios_sin_stock').catch(() => SIN_STOCK);
   const servs = (await rpc('gestion_servicios')).filter((s) => s.estado === 'activo' && s.precio != null && s.profesionales.length);
   if (!CENTRO) CENTRO = (await rpc('agenda_dia', { p_fecha: FECHA })).centro;
   const N = { cliente: null, lineas: [], fecha: FECHA, modo: 'pendiente' };
@@ -565,6 +580,9 @@ async function vNuevo(el) {
     const id = +x.dataset.s, s = servs.find((y) => y.id === id);
     if (x.checked) N.lineas.push({ servicio_id: id, profesional_id: null, cantidad: 1, nombre: s.nombre, duracion: s.duracion_min, inicio: null });
     else N.lineas = N.lineas.filter((l) => l.servicio_id !== id);
+    const faltan = SIN_STOCK.filter((z) => N.lineas.some((l) => l.servicio_id === z.servicio_id));
+    let av = $('#avisoStockN'); if (!av) { $('#ls').insertAdjacentHTML('afterend', '<div id="avisoStockN"></div>'); av = $('#avisoStockN'); }
+    av.innerHTML = faltan.length ? '<p class="aviso error" role="alert">Sin stock: ' + faltan.map((z) => esc(z.servicio) + ' (falta ' + z.faltan.map(esc).join(', ') + ')').join(' · ') + '. Se puede dar el turno, pero para cobrarlo hay que cargar el ingreso en Compras y stock.</p>' : '';
     pintarDet(); horarios();
   });
   $('#nf').onchange = (e) => { N.fecha = e.target.value; horarios(); };
@@ -783,14 +801,234 @@ async function vClientas(el) {
     $('#ficha').innerHTML = '<section class="card"><div class="fila entre"><h3>' + esc(f.nombre) + (f.confianza ? ' <span class="chip ok">De confianza</span>' : '') + '</h3>' + (f.celular ? '<a class="btn wa chico" target="_blank" rel="noopener" href="' + wa(f.celular, 'Hola ' + f.nombre.split(' ')[0] + '!') + '">WhatsApp</a>' : '') + '</div>' +
       '<p>' + esc((f.celular || '').replace('+549', '')) + (f.fecha_nacimiento ? ' · Cumpleaños ' + diaMes(f.fecha_nacimiento) : '') + '</p>' + (f.notas ? '<p class="aviso">' + esc(f.notas) + '</p>' : '') +
       '<p>Turnos: <b>' + f.resumen.total + '</b> · atendidos ' + f.resumen.terminados + ' · ausencias ' + f.resumen.ausentes + ' · anulados tarde ' + f.resumen.cancelados_fuera_termino + '</p>' +
-      (f.a_favor > 0 ? '<p class="aviso ok">Tiene ' + plata(f.a_favor) + ' a favor (señas).</p>' : '') +
-      '<div class="fila"><button class="btn" id="dt">Darle turno</button><button class="btn sec" id="ed">Editar datos</button></div></section>' +
+      (f.a_favor > 0 ? '<p class="aviso ok">Tiene ' + plata(f.a_favor) + ' a favor.</p>' : '') +
+      (f.deuda > 0 ? '<p class="aviso error" role="alert">Debe <b>' + plata(f.deuda) + '</b> (cuenta corriente).</p>' : '') +
+      '<div class="fila"><button class="btn" id="dt">Darle turno</button><button class="btn sec" id="ed">Editar datos</button><button class="btn sec" id="ccl">Cuenta corriente</button>' + (f.deuda > 0 ? '<button class="btn" id="cdeu">Cobrar deuda</button>' : '') + '</div></section>' +
       '<div class="lista">' + (f.turnos.length ? f.turnos.map((t) => turnoHtml(t, true)).join('') : '<p class="muted">Todavía no tiene turnos.</p>') + '</div>';
     $('#dt').onclick = () => { PRECLIENTA = { id: f.id, nombre: f.nombre, celular: f.celular, confianza: f.confianza }; mostrar('nuevo'); };
     $('#ed').onclick = () => formClienta(f, (g) => ficha(g.id));
+    $('#ccl').onclick = () => conBoton($('#ccl'), () => cuentaClienta(f, () => ficha(f.id)));
+    if ($('#cdeu')) $('#cdeu').onclick = () => cobrarDeuda(f, () => ficha(f.id));
     const todos = f.turnos;
     $$('[data-a]', $('#ficha')).forEach((b) => b.onclick = () => accion(b.dataset.a, todos.find((t) => t.id === +b.closest('[data-t]').dataset.t), b));
   }
+}
+
+// =============================================================== Compras y stock
+let SUB_COMPRAS = 'compras';
+const MEDIOS_PAGO = [{ id: 1, n: 'Efectivo' }, { id: 2, n: 'Transferencia' }, { id: 3, n: 'Tarjeta de débito' }, { id: 4, n: 'Tarjeta de crédito' }, { id: 5, n: 'Mercado Pago / QR' }];
+const MOTIVOS_STOCK = { ingreso: [['inventario_inicial', 'Inventario inicial (lo que ya hay en el local)'], ['recuento', 'Recuento: había más'], ['devolucion', 'Devolución o cambio que vuelve'], ['otro', 'Otro']],
+  egreso: [['rotura', 'Rotura'], ['vencimiento', 'Vencido'], ['merma', 'Se perdió o se usó de más'], ['recuento', 'Recuento: había menos'], ['devolucion', 'Cambio o devolución'], ['otro', 'Otro']] };
+const cantU = (n) => Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 3 });
+async function vCompras(el) {
+  el.innerHTML = '<div class="vista"><h2>Compras y stock</h2><p class="muted">Lo que les compran a los proveedores entra al stock con su remito; los servicios descuentan del stock al cobrar.</p>' +
+    '<div class="sub" id="subCompras">' + [['compras', 'Compras'], ['pagos', 'Pagos a proveedores'], ['proveedores', 'Proveedores'], ['stock', 'Stock']]
+      .map(([k, n]) => '<button type="button" data-k="' + k + '" aria-pressed="' + (SUB_COMPRAS === k) + '">' + n + '</button>').join('') + '</div><div id="kv"><p class="cargando">Cargando…</p></div></div>';
+  $$('#subCompras button').forEach((b) => b.onclick = () => { SUB_COMPRAS = b.dataset.k; vCompras(el); });
+  const kv = $('#kv');
+  try { await ({ compras: kCompras, pagos: kPagos, proveedores: kProveedores, stock: kStock })[SUB_COMPRAS](kv); } catch (e) { errorEn(kv, e); }
+}
+function filaPago(c, total, sufijo, cuentas) {
+  return '<div class="grilla"><div class="campo"><label for="pm' + sufijo + '">Cómo se paga</label><select id="pm' + sufijo + '">' + MEDIOS_PAGO.map((m) => '<option value="' + m.id + '">' + m.n + '</option>').join('') + '</select></div>' +
+    '<div class="campo"><label for="pi' + sufijo + '">Importe</label><input id="pi' + sufijo + '" type="number" min="0" step="0.01" inputmode="decimal" value="' + (total || '') + '"></div>' +
+    '<div class="campo" id="pcb' + sufijo + '" hidden><label for="pc' + sufijo + '">Sale de la cuenta</label><select id="pc' + sufijo + '">' + cuentas.map((x) => '<option value="' + x.id + '">' + esc(x.nombre) + '</option>').join('') + '</select></div></div>';
+}
+function armarPago(c, sufijo) { const s = $('#pm' + sufijo, c); const f = () => { $('#pcb' + sufijo, c).hidden = s.value === '1'; }; s.onchange = f; f(); }
+function leerPago(c, sufijo) { const m = +$('#pm' + sufijo, c).value; return [{ medio_pago_id: m, importe: +$('#pi' + sufijo, c).value || 0, cuenta_id: m === 1 ? null : +$('#pc' + sufijo, c).value || null }]; }
+// ---- Compras
+async function kCompras(kv) {
+  const l = await rpc('compras_listar', { p_dias: 120 });
+  kv.innerHTML = '<div class="fila"><button class="btn" id="bnc">+ Cargar compra</button></div>' +
+    '<p class="aviso">Cargá la factura del proveedor (o, si no mandó, marcá "no mandó factura"). Al guardar se genera el <b>remito</b> que da entrada al stock y el costo de cada producto se actualiza.</p>' +
+    '<div class="lista" id="lcomp">' + (l.length ? l.map((x) => '<button type="button" class="item" data-cc="' + x.id + '"><span><b>' + esc(x.proveedor) + '</b> · ' + (x.tipo === 'NC' ? 'Nota de crédito ' : '') + esc(x.numero) +
+      '<br><span class="muted">' + fFecha(x.fecha) + (x.remitos.length ? ' · remito ' + x.remitos.map(esc).join(', ') : '') + '</span></span><b>' + (x.tipo === 'NC' ? '− ' : '') + plata(x.total) +
+      (x.saldo > 0 ? '<br><span class="chip mal">debe ' + plata(x.saldo) + '</span>' : (x.tipo === 'FAC' ? '<br><span class="chip ok">pagada</span>' : '')) + '</b></button>').join('') : '<p class="muted">Todavía no hay compras cargadas.</p>') + '</div>';
+  $('#bnc', kv).onclick = () => conBoton($('#bnc', kv), () => formCompra(kv));
+  $$('[data-cc]', kv).forEach((b) => b.onclick = () => conBoton(b, () => verCompra(+b.dataset.cc, kv)));
+}
+async function formCompra(kv) {
+  const [provs, prods, mp] = await Promise.all([rpc('proveedores_listar'), rpc('compras_productos'), rpc('medios_para_pagar')]);
+  const activos = provs.filter((p) => p.estado === 'activo');
+  if (!activos.length) { modal('<h3>Cargar compra</h3><p class="aviso">Primero cargá el proveedor en "Proveedores".</p><button class="btn sec" onclick="cerrarModal()">Volver</button>'); return; }
+  if (!prods.length) { modal('<h3>Cargar compra</h3><p class="aviso">Primero cargá los productos en Calculador de costos → Insumos.</p><button class="btn sec" onclick="cerrarModal()">Volver</button>'); return; }
+  const opProd = '<option value="">Elegí…</option>' + prods.map((p) => '<option value="' + p.id + '">' + esc(p.nombre) + '</option>').join('');
+  const fila = () => '<div class="card rcomp"><div class="grilla"><div class="campo"><label>Producto</label><select class="rc-p">' + opProd + '</select></div>' +
+    '<div class="campo"><label>Cantidad <span>(envases)</span></label><input class="rc-c" type="number" min="0" step="any" inputmode="decimal"></div>' +
+    '<div class="campo"><label>Precio por envase <span>(lo que pagan)</span></label><input class="rc-u" type="number" min="0" step="0.01" inputmode="decimal"></div></div>' +
+    '<div class="fila entre"><span class="muted rc-s"></span><button type="button" class="btn sec chico rc-x">Sacar</button></div></div>';
+  const c = modal('<h3>Cargar compra</h3>' +
+    '<div class="campo"><label for="cprov">Proveedor</label><select id="cprov">' + activos.map((p) => '<option value="' + p.id + '">' + esc(p.razon_social) + '</option>').join('') + '</select></div>' +
+    '<label class="check"><input type="checkbox" id="csin"> El proveedor no mandó factura (el sistema le pone un número interno)</label>' +
+    '<div class="grilla" id="cfac"><div class="campo"><label for="clet">Letra</label><select id="clet"><option>C</option><option>B</option><option>A</option></select></div>' +
+    '<div class="campo"><label for="cpv">Punto de venta</label><input id="cpv" type="number" min="0" inputmode="numeric"></div>' +
+    '<div class="campo"><label for="cnum">Número</label><input id="cnum" inputmode="numeric"></div></div>' +
+    '<div class="campo"><label for="cfec">Fecha</label><input id="cfec" type="date" value="' + hoyISO() + '"></div>' +
+    '<h4>Productos</h4><div id="crs">' + fila() + '</div><button type="button" class="btn sec chico" id="cmas">+ Producto</button>' +
+    '<p class="total" id="ctot">Total $0</p>' +
+    '<div class="campo"><span class="lbl">¿Cómo se paga?</span><label class="check"><input type="radio" name="ccond" value="cuenta_corriente" checked> Queda en la cuenta del proveedor (se paga después)</label>' +
+    '<label class="check"><input type="radio" name="ccond" value="contado"> Se paga ahora</label></div><div id="cpago" hidden>' + filaPago(null, 0, 'C', mp.cuentas) + '</div>' +
+    '<div class="fila"><button class="btn" id="ok">Guardar compra</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  const tot = () => { let s = 0; $$('.rcomp', c).forEach((f) => { const v = Math.round((+$('.rc-c', f).value || 0) * (+$('.rc-u', f).value || 0) * 100) / 100; s += v; $('.rc-s', f).textContent = v ? 'Subtotal ' + plata(v) : ''; }); $('#ctot', c).textContent = 'Total ' + plata(s); if ($('#piC', c)) $('#piC', c).value = Math.round(s * 100) / 100; return s; };
+  const enlazar = () => { $$('.rcomp', c).forEach((f) => { $$('input,select', f).forEach((i) => i.oninput = tot); $('.rc-x', f).onclick = () => { if ($$('.rcomp', c).length > 1) { f.remove(); tot(); } }; }); };
+  $('#cmas', c).onclick = () => { $('#crs', c).insertAdjacentHTML('beforeend', fila()); enlazar(); }; enlazar();
+  $('#csin', c).onchange = () => { $('#cfac', c).hidden = $('#csin', c).checked; };
+  $$('input[name=ccond]', c).forEach((r) => r.onchange = () => { $('#cpago', c).hidden = $('input[name=ccond]:checked', c).value !== 'contado'; tot(); });
+  armarPago(c, 'C');
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    const cond = $('input[name=ccond]:checked', c).value;
+    const p = { proveedor_id: +$('#cprov', c).value, sin_factura: $('#csin', c).checked, letra: $('#clet', c).value, punto_venta: $('#cpv', c).value, numero: $('#cnum', c).value,
+      fecha: $('#cfec', c).value, condicion: cond, items: $$('.rcomp', c).map((f) => ({ producto_id: $('.rc-p', f).value, cantidad: $('.rc-c', f).value, precio: $('.rc-u', f).value })) };
+    if (cond === 'contado') p.pagos = leerPago(c, 'C');
+    try { const r = await rpc('compra_cargar', { p }); cerrarModal(); await kCompras(kv);
+      kv.insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Compra ' + esc(r.numero) + ' guardada · total ' + plata(r.total) + '. El remito <b>' + esc(r.remito) + '</b> dio entrada al stock.</p>');
+    } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+async function verCompra(id, kv) {
+  const x = await rpc('compra_ver', { p_id: id });
+  const c = modal('<h3>' + esc(x.proveedor) + ' · ' + esc(x.numero) + '</h3><p class="muted">' + fFecha(x.fecha) + '</p>' +
+    '<table class="tabla"><tr><th>Producto</th><th class="n">Cant.</th><th class="n">Precio</th></tr>' + x.items.map((i) => '<tr><td>' + esc(i.producto) + '</td><td class="n">' + cantU(i.cantidad) + '</td><td class="n">' + plata(i.precio) + '</td></tr>').join('') +
+    '<tr><th colspan="2">Total</th><th class="n">' + plata(x.total) + '</th></tr>' + (x.saldo != null ? '<tr><td colspan="2">Falta pagar</td><td class="n"><b>' + plata(x.saldo) + '</b></td></tr>' : '') + '</table>' +
+    (x.remitos.length ? '<p>Remito: ' + x.remitos.map((r) => '<b>' + esc(r.numero) + '</b>').join(', ') + '</p>' : '') +
+    (x.notas_credito.length ? '<p>Notas de crédito: ' + x.notas_credito.map((n) => esc(n.numero) + ' ' + plata(n.total) + (n.remitos.length ? ' (remito ' + n.remitos.map(esc).join(', ') + ')' : '')).join(' · ') + '</p>' : '') +
+    '<div class="fila">' + (x.tipo === 'FAC' ? '<button class="btn sec" id="bnc2">Nota de crédito</button>' : '') + '<button class="btn sec" onclick="cerrarModal()">Volver</button></div>');
+  if ($('#bnc2', c)) $('#bnc2', c).onclick = () => formNC(x, kv);
+}
+function formNC(x, kv) {
+  const c = modal('<h3>Nota de crédito · ' + esc(x.numero) + '</h3><p class="muted">Las compras no se anulan: si algo vino mal, se hace una nota de crédito.</p>' +
+    '<div class="campo"><label for="nmot">Motivo</label><input id="nmot" placeholder="Ej.: vinieron 2 fallados"></div>' +
+    '<div class="campo"><label for="nnum">Número de la nota del proveedor <span>(si la mandó)</span></label><input id="nnum"></div>' +
+    '<label class="check"><input type="checkbox" id="ndev"> Se devuelve mercadería (sale del stock con un remito de devolución)</label>' +
+    '<div id="nitems" hidden>' + x.items.map((i) => '<div class="campo"><label>' + esc(i.producto) + ' <span>(compró ' + cantU(i.cantidad) + ')</span></label><input class="nc-c" data-p="' + i.producto_id + '" data-u="' + i.precio + '" type="number" min="0" step="any" inputmode="decimal" value="0"></div>').join('') + '</div>' +
+    '<div class="campo" id="nimpb"><label for="nimp">Importe que acredita el proveedor</label><input id="nimp" type="number" min="0" step="0.01" inputmode="decimal"></div>' +
+    '<div class="fila"><button class="btn" id="ok">Guardar nota de crédito</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#ndev', c).onchange = () => { $('#nitems', c).hidden = !$('#ndev', c).checked; $('#nimpb', c).hidden = $('#ndev', c).checked; };
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    const dev = $('#ndev', c).checked;
+    const p = { compra_id: x.id, motivo: $('#nmot', c).value, numero: $('#nnum', c).value, devuelve: dev };
+    if (dev) p.items = $$('.nc-c', c).filter((i) => +i.value > 0).map((i) => ({ producto_id: +i.dataset.p, cantidad: +i.value })); else p.importe = $('#nimp', c).value;
+    try { const r = await rpc('compra_nc', { p }); cerrarModal(); await kCompras(kv);
+      kv.insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Nota de crédito ' + esc(r.numero) + ' por ' + plata(r.total) + (r.remito ? '. El remito ' + esc(r.remito) + ' sacó la mercadería del stock.' : '.') + '</p>');
+    } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+// ---- Pagos a proveedores (orden de pago) y cuenta corriente
+async function kPagos(kv) {
+  const l = await rpc('proveedores_listar');
+  const conSaldo = l.filter((p) => p.saldo !== 0);
+  kv.innerHTML = '<p class="aviso">Lo que le deben a cada proveedor. Tocá uno para ver su cuenta y cargar un pago (orden de pago).</p><div class="lista">' +
+    (l.length ? l.map((p) => '<button type="button" class="item" data-pp="' + p.id + '"><span><b>' + esc(p.razon_social) + '</b></span><b>' + (p.saldo > 0 ? '<span class="chip mal">debemos ' + plata(p.saldo) + '</span>' : p.saldo < 0 ? '<span class="chip ok">a favor ' + plata(-p.saldo) + '</span>' : '<span class="chip ok">al día</span>') + '</b></button>').join('') : '<p class="muted">No hay proveedores.</p>') + '</div>';
+  $$('[data-pp]', kv).forEach((b) => b.onclick = () => conBoton(b, () => cuentaProveedor(+b.dataset.pp, kv)));
+  return conSaldo;
+}
+async function cuentaProveedor(id, kv) {
+  const [cc, mp] = await Promise.all([rpc('cta_cte_proveedor', { p_proveedor: id }), rpc('medios_para_pagar')]);
+  const c = modal('<h3>' + esc(cc.proveedor.nombre) + '</h3><p>Saldo: <b>' + (cc.saldo > 0 ? 'le debemos ' + plata(cc.saldo) : cc.saldo < 0 ? 'a favor ' + plata(-cc.saldo) : 'al día') + '</b></p>' +
+    '<table class="tabla"><tr><th>Fecha</th><th>Comprobante</th><th class="n">Debe</th><th class="n">Pagado</th></tr>' + cc.movimientos.map((m) => '<tr><td>' + fFecha(String(m.fecha).slice(0, 10)) + '</td><td>' + esc(m.detalle) + '<br><span class="muted">' + esc(m.numero) + '</span></td><td class="n">' + (m.haber ? plata(m.haber) : '') + '</td><td class="n">' + (m.debe ? plata(m.debe) : '') + '</td></tr>').join('') + '</table>' +
+    (cc.saldo > 0 ? '<h4>Orden de pago</h4>' + filaPago(null, cc.saldo, 'P', mp.cuentas) + '<div class="campo"><label for="pnota">Nota <span>(opcional)</span></label><input id="pnota"></div>' : '') +
+    '<div class="fila">' + (cc.saldo > 0 ? '<button class="btn" id="ok">Pagar</button>' : '') + '<button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  if (cc.saldo > 0) { armarPago(c, 'P');
+    $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+      try { const r = await rpc('orden_pago_registrar', { p: { proveedor_id: id, pagos: leerPago(c, 'P'), nota: $('#pnota', c).value } }); cerrarModal(); await kPagos(kv);
+        kv.insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Orden de pago ' + esc(r.numero || '') + ' guardada.</p>');
+      } catch (e) { errorEn($('#err', c), e); }
+    }); }
+}
+// ---- Proveedores
+async function kProveedores(kv) {
+  const l = await rpc('proveedores_listar');
+  kv.innerHTML = '<div class="fila"><button class="btn" id="bnp">+ Proveedor</button></div><div class="lista">' + l.map((p) => '<button type="button" class="item" data-pv="' + p.id + '"><span><b>' + esc(p.razon_social) + '</b>' + (p.estado !== 'activo' ? ' <span class="chip">dado de baja</span>' : '') +
+    '<br><span class="muted">' + esc([p.telefono, p.email].filter(Boolean).join(' · ') || 'sin datos de contacto') + (p.tiene_lista ? ' · lista de precios cargada' : '') + '</span></span></button>').join('') + '</div>';
+  $('#bnp', kv).onclick = () => formProveedor(null, kv);
+  $$('[data-pv]', kv).forEach((b) => b.onclick = () => formProveedor(l.find((p) => p.id === +b.dataset.pv), kv));
+}
+function formProveedor(p, kv) {
+  const v = (k) => esc((p && p[k]) || '');
+  const c = modal('<h3>' + (p ? 'Proveedor' : 'Proveedor nuevo') + '</h3>' +
+    [['razon_social', 'Nombre o razón social'], ['cuit', 'CUIT (opcional)'], ['telefono', 'Teléfono o WhatsApp'], ['email', 'Email'], ['direccion', 'Dirección'], ['notas', 'Notas']]
+      .map(([k, n]) => '<div class="campo"><label for="pv_' + k + '">' + n + '</label><input id="pv_' + k + '" value="' + v(k) + '"></div>').join('') +
+    '<div class="fila"><button class="btn" id="ok">Guardar</button>' + (p && p.estado === 'activo' ? '<button class="btn sec" id="baja">Dar de baja</button>' : '') + (p && p.estado !== 'activo' ? '<button class="btn sec" id="alta">Volver a activar</button>' : '') +
+    '<button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  const guardar = (extra) => async () => {
+    const q = Object.assign(p ? { id: p.id } : {}, extra || {});
+    if (!extra) ['razon_social', 'cuit', 'telefono', 'email', 'direccion', 'notas'].forEach((k) => { q[k] = $('#pv_' + k, c).value.trim() || null; });
+    if (!extra && !q.razon_social) { errorEn($('#err', c), 'Escribí el nombre del proveedor.'); return; }
+    try { await rpc('abm_guardar', { p_tabla: 'proveedores', p: q }); cerrarModal(); await kProveedores(kv); } catch (e) { errorEn($('#err', c), e); }
+  };
+  $('#ok', c).onclick = () => conBoton($('#ok', c), guardar());
+  if ($('#baja', c)) $('#baja', c).onclick = () => conBoton($('#baja', c), guardar({ estado: 'inactivo' }));
+  if ($('#alta', c)) $('#alta', c).onclick = () => conBoton($('#alta', c), guardar({ estado: 'activo' }));
+}
+// ---- Stock
+async function kStock(kv) {
+  const l = await rpc('stock_listar');
+  const comprar = l.filter((x) => x.comprar && x.minimo > 0);
+  kv.innerHTML = '<div class="fila"><button class="btn" id="bmi">+ Movimiento interno</button></div>' +
+    '<p class="aviso">El stock entra con las compras (remito) y sale al cobrar cada servicio. Roturas, vencidos, cambios o lo que ya tienen en el local se cargan con <b>Movimiento interno</b>.</p>' +
+    (comprar.length ? '<p class="aviso error" role="alert">Hay que comprar: ' + comprar.map((x) => esc(x.nombre)).join(', ') + '.</p>' : '') +
+    '<div class="campo"><label for="fst">Filtrar</label><input id="fst" placeholder="Escribí parte del nombre"></div>' +
+    '<div class="lista" id="lst">' + (l.length ? l.map((x) => '<button type="button" class="item" data-st="' + x.id + '" data-n="' + esc(x.nombre.toLowerCase()) + '"><span><b>' + esc(x.nombre) + '</b><br><span class="muted">' +
+      cantU(x.stock) + ' envase' + (+x.stock === 1 ? '' : 's') + ' · ' + cantU(x.stock_uso) + ' ' + esc(x.unidad) + (x.minimo > 0 ? ' · mínimo ' + cantU(x.minimo) : '') + '</span></span><b>' +
+      (x.stock <= 0 ? '<span class="chip mal">sin stock</span>' : x.comprar && x.minimo > 0 ? '<span class="chip mal">comprar</span>' : '<span class="chip ok">hay</span>') + '</b></button>').join('') : '<p class="muted">Todavía no hay productos. Se cargan en Calculador de costos → Insumos.</p>') + '</div>';
+  $('#fst', kv).oninput = () => { const q = $('#fst', kv).value.toLowerCase().trim(); $$('[data-st]', kv).forEach((b) => { b.hidden = q && !b.dataset.n.includes(q); }); };
+  $('#bmi', kv).onclick = () => formMovimiento(l, kv);
+  $$('[data-st]', kv).forEach((b) => b.onclick = () => conBoton(b, () => verStock(l.find((x) => x.id === +b.dataset.st), kv)));
+}
+async function verStock(x, kv) {
+  const m = await rpc('stock_movimientos', { p_producto: x.id });
+  const c = modal('<h3>' + esc(x.nombre) + '</h3><p>Hay <b>' + cantU(x.stock) + '</b> envases (' + cantU(x.stock_uso) + ' ' + esc(x.unidad) + ') · valor ' + plata(x.valor) + '</p>' +
+    '<div class="campo"><label for="smin">Stock mínimo <span>(envases; con menos, avisa que hay que comprar)</span></label><input id="smin" type="number" min="0" step="any" inputmode="decimal" value="' + (+x.minimo || '') + '"></div>' +
+    '<h4>Movimientos</h4><table class="tabla" id="tmov"><tr><th>Fecha</th><th>Detalle</th><th class="n">Cantidad</th></tr>' + (m.length ? m.map((r) => '<tr><td>' + fCorta(r.fecha) + '</td><td>' + esc(r.detalle) + '</td><td class="n">' + (r.cantidad > 0 ? '+' : '') + cantU(r.cantidad) + '</td></tr>').join('') : '<tr><td colspan="3" class="muted">Sin movimientos.</td></tr>') + '</table>' +
+    '<div class="fila"><button class="btn" id="ok">Guardar mínimo</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => { try { await rpc('stock_minimo_guardar', { p_producto: x.id, p_minimo: $('#smin', c).value === '' ? 0 : +$('#smin', c).value }); cerrarModal(); await kStock(kv); } catch (e) { errorEn($('#err', c), e); } });
+}
+function formMovimiento(l, kv) {
+  if (!l.length) { modal('<h3>Movimiento interno</h3><p class="aviso">Primero cargá los productos en Calculador de costos → Insumos.</p><button class="btn sec" onclick="cerrarModal()">Volver</button>'); return; }
+  const opProd = '<option value="">Elegí…</option>' + l.map((p) => '<option value="' + p.id + '">' + esc(p.nombre) + '</option>').join('');
+  const fila = () => '<div class="card rmov"><div class="grilla"><div class="campo"><label>Producto</label><select class="rm-p">' + opProd + '</select></div><div class="campo"><label>Cantidad <span>(envases)</span></label><input class="rm-c" type="number" min="0" step="any" inputmode="decimal"></div></div><div class="fila"><button type="button" class="btn sec chico rm-x">Sacar</button></div></div>';
+  const c = modal('<h3>Movimiento interno</h3><div class="campo"><span class="lbl">¿Entra o sale?</span><label class="check"><input type="radio" name="mtipo" value="ingreso" checked> Entra al stock</label><label class="check"><input type="radio" name="mtipo" value="egreso"> Sale del stock</label></div>' +
+    '<div class="campo"><label for="mmot">Motivo</label><select id="mmot"></select></div><div class="campo"><label for="mnota">Nota</label><input id="mnota" placeholder="Qué pasó"></div>' +
+    '<div id="mrs">' + fila() + '</div><button type="button" class="btn sec chico" id="mmas">+ Producto</button>' +
+    '<div class="fila"><button class="btn" id="ok">Guardar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  const motivos = () => { const t = $('input[name=mtipo]:checked', c).value; $('#mmot', c).innerHTML = MOTIVOS_STOCK[t].map(([k, n]) => '<option value="' + k + '">' + n + '</option>').join(''); };
+  $$('input[name=mtipo]', c).forEach((r) => r.onchange = motivos); motivos();
+  const enlazar = () => $$('.rmov', c).forEach((f) => { $('.rm-x', f).onclick = () => { if ($$('.rmov', c).length > 1) f.remove(); }; });
+  $('#mmas', c).onclick = () => { $('#mrs', c).insertAdjacentHTML('beforeend', fila()); enlazar(); }; enlazar();
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    const items = $$('.rmov', c).map((f) => ({ producto_id: +$('.rm-p', f).value || null, cantidad: +$('.rm-c', f).value || 0 }));
+    if (items.some((i) => !i.producto_id || i.cantidad <= 0)) { errorEn($('#err', c), 'Elegí el producto y escribí la cantidad en cada renglón.'); return; }
+    try { const r = await rpc('stock_movimiento_interno', { p: { tipo: $('input[name=mtipo]:checked', c).value, motivo: $('#mmot', c).value, nota: $('#mnota', c).value, items } });
+      cerrarModal(); await kStock(kv); kv.insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Remito ' + esc(r.numero) + ' guardado: el stock ya cambió.</p>');
+    } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+
+function cobrarDeuda(f, listo) {
+  const c = modal('<h3>Cobrar deuda · ' + esc(f.nombre) + '</h3><p>Debe <b>' + plata(f.deuda) + '</b>.</p>' +
+    MEDIOS_PAGO.map((m) => '<div class="campo"><label for="d' + m.id + '">' + m.n + '</label><input id="d' + m.id + '" type="number" min="0" step="0.01" inputmode="decimal" value="' + (m.id === 1 ? f.deuda : 0) + '"></div>').join('') +
+    '<div class="fila"><button class="btn ok" id="ok">Cobrar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
+    try { const r = await rpc('clienta_cobrar_deuda', { p: { cliente_id: f.id, pagos: MEDIOS_PAGO.map((m) => ({ medio_pago_id: m.id, importe: +$('#d' + m.id, c).value || 0 })).filter((x) => x.importe > 0) } });
+      modal('<h3>Cobrado ✓</h3><p>Recibo <b>' + esc(r.recibo || '') + '</b>. ' + (r.deuda > 0 ? 'Todavía debe ' + plata(r.deuda) + '.' : 'Ya no debe nada.') + '</p><div class="fila"><button class="btn" id="fin">Listo</button></div>');
+      $('#fin').onclick = () => { cerrarModal(); listo(); };
+    } catch (e) { errorEn($('#err', c), e); }
+  });
+}
+async function cuentaClienta(f, listo) {
+  const cc = await rpc('clienta_cuenta', { p_cliente: f.id });
+  const c = modal('<h3>Cuenta corriente · ' + esc(f.nombre) + '</h3><p>' + (cc.deuda > 0 ? 'Debe <b>' + plata(cc.deuda) + '</b>' : 'No debe nada') + (cc.a_favor > 0 ? ' · a favor ' + plata(cc.a_favor) : '') + '</p>' +
+    '<h4>Ventas</h4>' + (cc.ventas.length ? '<table class="tabla" id="tcv">' + cc.ventas.map((v) => '<tr><td>' + fFecha(v.fecha) + ' · ' + (v.tipo === 'NC' ? 'Nota de crédito ' : '') + esc(v.numero) + '<br><span class="muted">' + esc(v.detalle || '') + '</span></td><td class="n">' + (v.tipo === 'NC' ? '− ' : '') + plata(v.total) +
+      (v.saldo > 0 ? '<br><span class="chip mal">debe ' + plata(v.saldo) + '</span>' : '') + (v.tipo === 'VTA' && v.total - v.nc > 0.005 ? '<br><button type="button" class="btn sec chico" data-nc="' + v.id + '" data-max="' + (v.total - v.nc) + '">Nota de crédito</button>' : '') + '</td></tr>').join('') + '</table>' : '<p class="muted">No tiene ventas.</p>') +
+    '<h4>Pagos</h4>' + (cc.pagos.length ? '<table class="tabla">' + cc.pagos.map((r) => '<tr><td>' + fFecha(String(r.fecha).slice(0, 10)) + ' · ' + esc(r.numero) + '</td><td class="n">' + plata(r.total) + '</td></tr>').join('') + '</table>' : '<p class="muted">No hay pagos.</p>') +
+    '<h4>Límite de cuenta corriente</h4><div class="campo"><label for="clim">Hasta cuánto puede deber <span>(vacío: sin tope)</span></label><input id="clim" type="number" min="0" step="1" inputmode="decimal" value="' + (cc.limite || '') + '"></div>' +
+    '<div class="fila"><button class="btn sec" id="glim">Guardar límite</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#glim', c).onclick = () => conBoton($('#glim', c), async () => { try { await rpc('clienta_limite_guardar', { p_cliente: f.id, p_limite: $('#clim', c).value === '' ? 0 : +$('#clim', c).value }); $('#err', c).innerHTML = '<p class="aviso ok" role="status">Límite guardado.</p>'; } catch (e) { errorEn($('#err', c), e); } });
+  $$('[data-nc]', c).forEach((b) => b.onclick = () => {
+    const m = modal('<h3>Nota de crédito</h3><p class="muted">Las ventas no se anulan: si algo se cobró mal, se hace una nota de crédito. Lo acreditado le queda a favor (o le baja la deuda).</p>' +
+      '<div class="campo"><label for="ncm">Motivo</label><input id="ncm"></div><div class="campo"><label for="nci">Importe <span>(hasta ' + plata(+b.dataset.max) + ')</span></label><input id="nci" type="number" min="0" step="0.01" inputmode="decimal" value="' + b.dataset.max + '"></div>' +
+      '<div class="fila"><button class="btn" id="ok">Guardar nota de crédito</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+    $('#ok', m).onclick = () => conBoton($('#ok', m), async () => { try { await rpc('venta_nc', { p: { venta_id: +b.dataset.nc, motivo: $('#ncm', m).value, importe: $('#nci', m).value } }); cerrarModal(); listo(); } catch (e) { errorEn($('#err', m), e); } });
+  });
 }
 
 // =============================================================== Ajustes
@@ -970,11 +1208,11 @@ async function aCostos(sv) {
     '<p class="muted" id="calcExplica">Acá ven cuánto les cuesta de verdad hacer cada servicio: los productos que usa, el tiempo de trabajo, el alquiler y los gastos del local, la luz y el desgaste de los equipos, y los impuestos. Sirve para saber si el precio que cobran les deja ganancia y cuánto deberían cobrar. ' +
     'Para que calcule: <b>1)</b> carguen los productos en <b>Insumos</b>; <b>2)</b> en cada servicio carguen sus <b>insumos del servicio</b>; <b>3)</b> completen <b>Gastos y parámetros</b>.</p>' +
     '<div class="sub" id="subCostos" role="group" aria-label="Calculador de costos">' +
-    [['servicios', 'Servicios'], ['insumos', 'Insumos'], ['parametros', 'Gastos y parámetros']].map(([k, n]) => '<button type="button" data-cs="' + k + '" aria-pressed="' + (SUB_COSTOS === k) + '">' + n + '</button>').join('') +
+    [['servicios', 'Servicios'], ['insumos', 'Insumos'], ['parametros', 'Gastos y parámetros'], ['precios', 'Cambios de precios']].map(([k, n]) => '<button type="button" data-cs="' + k + '" aria-pressed="' + (SUB_COSTOS === k) + '">' + n + '</button>').join('') +
     '</div><div id="cv" class="vista"><p class="cargando">Cargando…</p></div>';
   $$('#subCostos button', sv).forEach((b) => b.onclick = () => { SUB_COSTOS = b.dataset.cs; aCostos(sv); });
   const cv = $('#cv');
-  try { await ({ servicios: cServicios, insumos: cInsumos, parametros: cParametros })[SUB_COSTOS](cv); } catch (e) { errorEn(cv, e); }
+  try { await ({ servicios: cServicios, insumos: cInsumos, parametros: cParametros, precios: cPrecios })[SUB_COSTOS](cv); } catch (e) { errorEn(cv, e); }
 }
 // ---- Servicios: costo, ganancia y semáforo
 async function cServicios(cv) {
@@ -999,7 +1237,7 @@ function detalleCosto(x, d, cv) {
     fila('Luz de equipos', x.equipos_luz) + fila('Desgaste de equipos', x.equipos_desgaste) +
     fila('Impuestos y cobro', x.impuestos_cobro, 'sobre el precio') +
     '<tr><th>Costo total</th><th class="n">' + (x.costo_total != null ? plataC(x.costo_total) : '<span class="chip info">faltan datos</span>') + '</th></tr>' +
-    '<tr><td>Precio actual</td><td class="n">' + (x.precio != null ? plataC(x.precio) : '<span class="chip mal">sin precio</span>') + '</td></tr>' +
+    '<tr><td>' + (x.precio_calculado != null ? 'Precio (automático)<br><span class="muted">se actualiza solo cuando cambian los costos, redondeado a $1.000</span>' : 'Precio actual<br><span class="muted">mientras falten datos, es el que cargaron en Ajustes → Servicios</span>') + '</td><td class="n">' + (x.precio != null ? plataC(x.precio) : '<span class="chip mal">sin precio</span>') + '</td></tr>' +
     '<tr><th>Ganancia</th><th class="n">' + (x.ganancia != null ? plataC(x.ganancia) + ' · ' + pct(x.margen_pct) : '—') + '</th></tr>' +
     '<tr><td>' + (d.margen_objetivo_pct != null ? 'Precio para ganar ' + pct(d.margen_objetivo_pct) : 'Precio sugerido') + '</td><td class="n">' + (x.precio_sugerido != null ? plataC(x.precio_sugerido) : '<span class="chip info">faltan datos</span>') + '</td></tr></table>' +
     '<p class="fila"><span class="chip ' + SEMAFORO[x.semaforo][0] + '">' + SEMAFORO[x.semaforo][1] + '</span></p>' +
@@ -1097,6 +1335,41 @@ function formInsumo(i, cat, cv) {
     try { await rpc('insumo_guardar', { p: { id: i.id, estado: 'inactivo' } }); cerrarModal(); await cInsumos(cv); } catch (e) { errorEn($('#err', c), e); } });
 }
 // ---- Gastos y parámetros
+// ---- Cambios de precios y lista para compartir
+async function cPrecios(cv) {
+  const a = await rpc('precios_cambios', { p_dias: 90 });
+  cv.innerHTML = '<p class="aviso">Cada vez que cambia un precio queda acá: cuándo, por qué, cuánto era y cuánto es. Con <b>Lista de precios</b> la copian para WhatsApp o la imprimen para publicarla.</p>' +
+    '<div class="fila"><button class="btn" id="blp">Lista de precios</button></div>' +
+    (a.length ? a.map((x) => '<div class="card" data-act><p><b>' + fCorta(x.fecha) + '</b> · ' + esc(x.motivo) + '</p><table class="tabla"><tr><th>Servicio</th><th class="n">Antes</th><th class="n">Ahora</th></tr>' +
+      (x.items || []).map((i) => '<tr><td>' + esc(i.producto) + '</td><td class="n">' + (i.antes != null ? plata(i.antes) : 'sin precio') + '</td><td class="n"><b>' + plata(i.ahora) + '</b>' +
+        (i.pct != null ? '<br><span class="muted">' + (i.pct > 0 ? '+' : '') + pct(i.pct) + '</span>' : '') + '</td></tr>').join('') + '</table></div>').join('')
+      : '<p class="muted" id="sinCambios">Todavía no cambió ningún precio.</p>');
+  $('#blp', cv).onclick = () => conBoton($('#blp', cv), listaPrecios);
+}
+async function listaPrecios() {
+  const l = await rpc('lista_precios_vigente');
+  let cat = null; const lineas = []; let html = '';
+  l.forEach((x) => {
+    if (x.categoria !== cat) { cat = x.categoria; lineas.push('', '*' + cat + '*'); html += '<tr><th colspan="2">' + esc(cat) + '</th></tr>'; }
+    const p = plata(x.precio) + (x.por_zona ? ' por zona' : '');
+    lineas.push('• ' + x.servicio + ': ' + p); html += '<tr><td>' + esc(x.servicio) + '</td><td class="n">' + p + '</td></tr>';
+  });
+  const texto = ('Abundia · Lista de precios ' + new Intl.DateTimeFormat('es-AR', { timeZone: TZ }).format(new Date()) + '\n' + lineas.join('\n')).trim();
+  const c = modal('<h3>Lista de precios</h3><p class="muted">Precios vigentes de hoy, los mismos que ven las clientas en la página.</p>' +
+    (l.length ? '<table class="tabla" id="tlp">' + html + '</table>' : '<p class="muted">Todavía no hay servicios con precio.</p>') +
+    '<div class="fila"><button class="btn" id="bcop">Copiar para WhatsApp</button><button class="btn sec" id="bimp">Imprimir o guardar PDF</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
+  $('#bcop', c).onclick = async () => {
+    try { await navigator.clipboard.writeText(texto); $('#err', c).innerHTML = '<p class="aviso ok" role="status">Copiada. Pegala en WhatsApp o en Instagram.</p>'; }
+    catch (e) { $('#err', c).innerHTML = '<p class="aviso">No se pudo copiar sola: mantené apretado este texto y copialo.</p><textarea rows="8" style="width:100%">' + esc(texto) + '</textarea>'; }
+  };
+  $('#bimp', c).onclick = () => {
+    const w = window.open('', '_blank');
+    if (!w) { $('#err', c).innerHTML = '<p class="aviso error" role="alert">El navegador no dejó abrir la ventana para imprimir.</p>'; return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Abundia · Lista de precios</title><style>body{font-family:sans-serif;margin:24px;color:#1f2a24}h1{font-weight:400}table{border-collapse:collapse;width:100%}td,th{padding:6px 4px;border-bottom:1px solid #ddd;text-align:left}td:last-child{text-align:right}th{padding-top:16px}</style>' +
+      '<h1>Abundia · Lista de precios</h1><p>' + esc(new Intl.DateTimeFormat('es-AR', { timeZone: TZ, dateStyle: 'long' }).format(new Date())) + '</p><table>' + html + '</table>');
+    w.document.close(); w.focus(); w.print();
+  };
+}
 async function cParametros(cv) {
   const d = await rpc('costos_ver'), k = d.config, gf = d.gastos_fijos;
   const inp = (id, lbl, v, ayuda, extra) => '<div class="campo"><label for="' + id + '">' + lbl + (ayuda ? ' <span>(' + ayuda + ')</span>' : '') + '</label><input id="' + id + '" type="number" step="any" inputmode="decimal" value="' + (v ?? '') + '"' + (extra || '') + '></div>';
