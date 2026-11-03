@@ -880,7 +880,7 @@ async function gridCompras(kv) {
     const tot = l.filter((x) => x.clase === 'comprobante').reduce((s, x) => s + (x.tipo === 'NC' ? -x.total : x.total), 0);
     g.innerHTML = l.length ? '<table class="tgrid" id="tcomp"><thead><tr><th>Fecha</th><th>Tipo</th><th>Número</th><th>Proveedor</th><th class="n">Total</th><th class="n">Saldo</th><th>Estado</th><th></th></tr></thead><tbody>' +
       l.map((x) => '<tr data-fila="' + x.clase + '-' + x.id + '"><td data-l="Fecha">' + fFecha(String(x.fecha).slice(0, 10)) + '</td><td data-l="Tipo">' + TIPO_COMP[x.tipo] + '</td>' +
-        '<td data-l="Número">' + esc(x.numero) + (x.origen ? '<br><span class="muted">de ' + esc(x.origen) + '</span>' : '') + (x.renglones != null ? '<br><span class="muted">' + x.renglones + ' renglones</span>' : '') + '</td>' +
+        '<td data-l="Número">' + esc(x.numero) + (x.origen ? '<br><span class="muted">de ' + esc(x.origen) + '</span>' : '') + (x.renglones != null ? '<br><span class="muted">' + x.renglones + (x.renglones === 1 ? ' renglón' : ' renglones') + '</span>' : '') + '</td>' +
         '<td data-l="Proveedor">' + esc(x.proveedor) + '</td><td data-l="Total" class="n">' + (x.tipo === 'NC' ? '− ' : '') + plata(x.total) + '</td>' +
         '<td data-l="Saldo" class="n">' + (x.saldo != null ? plata(x.saldo) : '') + '</td><td data-l="Estado">' + chipEstado(x.estado) + '</td><td class="acc">' +
         (x.clase === 'borrador'
@@ -1030,7 +1030,7 @@ async function gridVentas(el) {
     g.innerHTML = l.length ? '<table class="tgrid" id="tvent"><thead><tr><th>Fecha</th><th>Tipo</th><th>Número</th><th>Clienta</th><th>Detalle</th><th class="n">Total</th><th class="n">Saldo</th><th>Estado</th><th></th></tr></thead><tbody>' +
       l.map((x) => '<tr data-fila="' + x.clase + '-' + x.id + '"><td data-l="Fecha">' + fFecha(String(x.fecha).slice(0, 10)) + '</td><td data-l="Tipo">' + TIPO_VENT[x.tipo] + '</td>' +
         '<td data-l="Número">' + esc(x.numero) + (x.origen ? '<br><span class="muted">de ' + esc(x.origen) + '</span>' : '') + '</td><td data-l="Clienta">' + esc(x.clienta) + '</td>' +
-        '<td data-l="Detalle">' + esc(x.detalle || (x.renglones != null ? x.renglones + ' renglones' : '')) + '</td><td data-l="Total" class="n">' + (x.tipo === 'NC' ? '− ' : '') + plata(x.total) + '</td>' +
+        '<td data-l="Detalle">' + esc(x.detalle || (x.renglones != null ? x.renglones + (x.renglones === 1 ? ' renglón' : ' renglones') : '')) + '</td><td data-l="Total" class="n">' + (x.tipo === 'NC' ? '− ' : '') + plata(x.total) + '</td>' +
         '<td data-l="Saldo" class="n">' + (x.saldo != null ? plata(x.saldo) : '') + '</td><td data-l="Estado">' + chipEstado(x.estado) + (x.condicion === 'cuenta_corriente' && x.tipo !== 'NC' ? '<br><span class="muted">cuenta corriente</span>' : '') + '</td><td class="acc">' +
         (x.clase === 'borrador'
           ? '<button class="btn chico" data-seg="' + x.id + '">Seguir cargando</button><button class="btn sec chico" data-desc="' + x.id + '">Descartar</button>'
