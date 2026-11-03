@@ -1488,40 +1488,62 @@ function detalleCosto(x, d, cv) {
 async function editarReceta(x, cv) {
   const [rec, ins, cfg] = await Promise.all([rpc('receta_ver', { p_servicio: x.id }), rpc('insumos_listar'), rpc('costos_ver')]);
   const eqs = cfg.equipos;
-  const filaIns = (r) => '<div class="card rins"><div class="grilla"><div class="campo"><label>Insumo</label><select class="ri-p"><option value="">Elegí…</option>' +
-      ins.map((i) => '<option value="' + i.id + '"' + (r && r.producto_id === i.id ? ' selected' : '') + '>' + esc(i.nombre) + ' · ' + cant(i.contenido) + ' ' + UNIDAD[i.unidad] + '</option>').join('') +
-      (r && !ins.some((i) => i.id === r.producto_id) ? '<option value="' + r.producto_id + '" selected>' + esc(r.nombre) + ' (dado de baja: sacalo o elegí otro)</option>' : '') + '</select></div>' +
-    '<div class="campo"><label>Usa por sesión <span class="ri-u">' + (r ? '(' + UNIDAD_LARGA[r.unidad] + ')' : '') + '</span></label><input class="ri-c" type="number" min="0" step="any" inputmode="decimal" value="' + (r ? +r.cantidad : '') + '"></div>' +
+  // fila de insumo ya elegido (r: {producto_id | catalogo_id, nombre, unidad, contenido, costo_por_unidad, cantidad, nuevo})
+  const filaIns = (r) => '<div class="card rins" data-pid="' + (r.producto_id || '') + '" data-cat="' + (r.catalogo_id || '') + '" data-u="' + r.unidad + '" data-cont="' + (r.contenido || 1) + '" data-cpu="' + (r.costo_por_unidad ?? '') + '">' +
+    '<p><b>' + esc(r.nombre) + '</b> <span class="muted">· envase ' + cant(r.contenido || 1) + ' ' + UNIDAD[r.unidad] + (r.activo === false ? ' · dado de baja: sacalo o elegí otro' : '') + '</span></p>' +
+    (r.nuevo ? '<p class="muted">Es de la lista del proveedor: se carga solo al guardar. Revisá cómo se mide y cuánto trae el envase.</p><div class="grilla"><div class="campo"><label>Se mide en</label><select class="ri-uu">' +
+      Object.entries(UNIDAD_LARGA).map(([k, n]) => '<option value="' + k + '"' + (k === r.unidad ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
+      '<div class="campo"><label>Cuánto trae el envase</label><input class="ri-cont" type="number" min="0" step="any" inputmode="decimal" value="' + (r.contenido || 1) + '"></div></div>' : '') +
+    '<div class="grilla"><div class="campo"><label>Usa por sesión <span class="ri-u">(' + UNIDAD_LARGA[r.unidad] + ')</span></label><input class="ri-c" type="number" min="0" step="any" inputmode="decimal" value="' + (r.cantidad != null ? +r.cantidad : '') + '"></div>' +
     '<div class="campo"><label>o rinde <span>(sesiones)</span></label><input class="ri-r" type="number" min="0" step="any" inputmode="decimal" placeholder="Ej.: 30"></div></div>' +
     '<div class="fila entre"><span class="muted ri-costo"></span><button type="button" class="btn sec chico ri-x">Sacar</button></div></div>';
+  // fila para buscar un insumo (en los cargados y en toda la lista del proveedor)
+  const filaBus = () => '<div class="card rbus"><div class="campo"><label>Buscá el producto <span>(nombre o código)</span></label><input class="ri-q" autocomplete="off" placeholder="Ej.: jelly, gasas, serum"></div>' +
+    '<div class="lista ri-res"></div><div class="fila entre"><span class="muted">Busca en tus insumos y en toda la lista del proveedor.</span><button type="button" class="btn sec chico ri-x">Sacar</button></div></div>';
   const filaEq = (r) => '<div class="card req"><div class="grilla"><div class="campo"><label>Equipo</label><select class="re-e"><option value="">Elegí…</option>' +
       eqs.map((e) => '<option value="' + e.id + '"' + (r && r.equipo_id === e.id ? ' selected' : '') + '>' + esc(e.nombre) + '</option>').join('') + '</select></div>' +
     '<div class="campo"><label>Minutos de uso</label><input class="re-m" type="number" min="1" max="600" step="1" value="' + (r ? r.minutos : '') + '"></div></div>' +
     '<div class="fila entre"><span></span><button type="button" class="btn sec chico re-x">Sacar</button></div></div>';
   const c = modal('<h3>Insumos del servicio · ' + esc(x.nombre) + '</h3><p class="muted">Poné cuánto se usa en <b>una</b> sesión' + (x.por_zona ? ' (una zona)' : '') + '. Si es más fácil, poné cuántas sesiones rinde el envase y el sistema hace la cuenta.</p>' +
     '<h3>Insumos</h3><label class="check"><input type="checkbox" id="rsin"' + (rec.sin_insumos ? ' checked' : '') + '> Este servicio no usa insumos</label>' +
-    '<div id="rinsbox"' + (rec.sin_insumos ? ' hidden' : '') + '>' + (ins.length ? '' : '<p class="aviso">Todavía no hay insumos: cargalos en Costos → Insumos.</p>') + '<div id="rins" class="lista">' + rec.insumos.map(filaIns).join('') + '</div>' +
-    (ins.length ? '<button type="button" class="btn sec chico" id="ri+">+ Insumo</button>' : '') + '</div>' +
+    '<div id="rinsbox"' + (rec.sin_insumos ? ' hidden' : '') + '><div id="rins" class="lista">' + rec.insumos.map((r) => filaIns(Object.assign({}, r, { costo_por_unidad: r.costo_envase != null ? r.costo_envase / (r.contenido || 1) : null }))).join('') + (rec.insumos.length ? '' : filaBus()) + '</div>' +
+    '<button type="button" class="btn sec chico" id="ri+">+ Insumo</button></div>' +
     '<h3>Equipos</h3>' + (eqs.length ? '' : '<p class="aviso">No hay equipos cargados (se cargan en Gastos y parámetros). Si no usa equipos, dejalo vacío.</p>') + '<div id="reqs" class="lista">' + rec.equipos.map(filaEq).join('') + '</div>' +
     (eqs.length ? '<button type="button" class="btn sec chico" id="re+">+ Equipo</button>' : '') +
     '<div class="fila"><button class="btn" id="ok">Guardar</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
   const enganchar = () => {
     $$('.rins', c).forEach((f) => {
-      const calc = () => { const i = ins.find((z) => z.id === +$('.ri-p', f).value), q = +$('.ri-c', f).value, rd = +$('.ri-r', f).value;
-        $('.ri-u', f).textContent = i ? '(' + UNIDAD_LARGA[i.unidad] + ')' : '';
-        const q2 = rd > 0 && i ? (i.contenido || 1) / rd : q;
-        $('.ri-costo', f).textContent = i && q2 > 0 && i.costo_por_unidad != null ? 'Cuesta ' + plata(Math.round(i.costo_por_unidad * q2 * 100) / 100) + ' por sesión' + (rd > 0 ? ' (' + cant(q2) + ' ' + UNIDAD[i.unidad] + ')' : '') : ''; };
-      $('.ri-p', f).onchange = calc; $('.ri-c', f).oninput = () => { $('.ri-r', f).value = ''; calc(); }; $('.ri-r', f).oninput = () => { $('.ri-c', f).value = ''; calc(); };
+      const calc = () => { const u = $('.ri-uu', f) ? $('.ri-uu', f).value : f.dataset.u, cont = $('.ri-cont', f) ? +$('.ri-cont', f).value || 1 : +f.dataset.cont || 1;
+        const cpu = f.dataset.cpu === '' ? null : ($('.ri-cont', f) ? +f.dataset.cpu * (+f.dataset.cont || 1) / cont : +f.dataset.cpu);
+        const q = +$('.ri-c', f).value, rd = +$('.ri-r', f).value, q2 = rd > 0 ? cont / rd : q;
+        $('.ri-u', f).textContent = '(' + UNIDAD_LARGA[u] + ')';
+        $('.ri-costo', f).textContent = q2 > 0 && cpu != null ? 'Cuesta ' + plata(Math.round(cpu * q2 * 100) / 100) + ' por sesión' + (rd > 0 ? ' (' + cant(q2) + ' ' + UNIDAD[u] + ')' : '') : ''; };
+      $('.ri-c', f).oninput = () => { $('.ri-r', f).value = ''; calc(); }; $('.ri-r', f).oninput = () => { $('.ri-c', f).value = ''; calc(); };
+      if ($('.ri-uu', f)) { $('.ri-uu', f).onchange = calc; $('.ri-cont', f).oninput = calc; }
       $('.ri-x', f).onclick = () => f.remove(); calc(); });
+    $$('.rbus', c).forEach((f) => {
+      if (f.dataset.ok) return; f.dataset.ok = '1'; let tmo;
+      $('.ri-x', f).onclick = () => f.remove();
+      $('.ri-q', f).oninput = () => { clearTimeout(tmo); tmo = setTimeout(async () => {
+        const q = $('.ri-q', f).value.trim(); if (q.length < 2) { $('.ri-res', f).innerHTML = q ? '<p class="muted">Escribí al menos 2 letras.</p>' : ''; return; }
+        try { const r = await rpc('insumo_receta_buscar', { p_texto: q });
+          $('.ri-res', f).innerHTML = r.length ? r.map((x, k) => '<button type="button" class="item" data-k="' + k + '"><span><b>' + esc(x.nombre) + '</b><br><span class="muted">' +
+            (x.origen === 'insumo' ? 'ya cargado' : esc(x.proveedor || 'lista del proveedor') + (x.codigo ? ' · cód. ' + esc(x.codigo) : '')) + ' · envase ' + cant(x.contenido) + ' ' + UNIDAD[x.unidad] + '</span></span><b>' + (x.costo != null ? plata(x.costo) : '') + '</b></button>').join('')
+            : '<p class="muted">No aparece. Probá con otra palabra o cargalo a mano en Insumos.</p>';
+          $$('[data-k]', $('.ri-res', f)).forEach((b) => b.onclick = () => { const x = r[+b.dataset.k];
+            if ($$('.rins', c).some((g) => (x.producto_id && +g.dataset.pid === x.producto_id) || (x.catalogo_id && +g.dataset.cat === x.catalogo_id))) { $('.ri-res', f).innerHTML = '<p class="aviso error">Ese producto ya está en este servicio.</p>'; return; }
+            f.outerHTML = filaIns(Object.assign({}, x, { nuevo: x.origen === 'catalogo' })); enganchar(); });
+        } catch (e) { errorEn($('.ri-res', f), e); } }, 300); };
+    });
     $$('.req', c).forEach((f) => { $('.re-x', f).onclick = () => f.remove(); });
   };
   enganchar();
   $('#rsin', c).onchange = (e) => { $('#rinsbox', c).hidden = e.target.checked; };
-  if ($('#ri\\+', c)) $('#ri\\+', c).onclick = () => { $('#rins', c).insertAdjacentHTML('beforeend', filaIns()); enganchar(); };
+  if ($('#ri\\+', c)) $('#ri\\+', c).onclick = () => { $('#rins', c).insertAdjacentHTML('beforeend', filaBus()); enganchar(); const q = $$('.rbus .ri-q', c).pop(); if (q) q.focus(); };
   if ($('#re\\+', c)) $('#re\\+', c).onclick = () => { $('#reqs', c).insertAdjacentHTML('beforeend', filaEq()); enganchar(); };
   $('#ok', c).onclick = () => conBoton($('#ok', c), async () => {
     const sin = $('#rsin', c).checked;
-    const p = { sin_insumos: sin, insumos: sin ? [] : $$('.rins', c).map((f) => { const o = { producto_id: $('.ri-p', f).value }; if ($('.ri-r', f).value !== '') o.rinde = $('.ri-r', f).value; else o.cantidad = $('.ri-c', f).value; return o; }),
+    const p = { sin_insumos: sin, insumos: sin ? [] : $$('.rins', c).map((f) => { const o = f.dataset.pid ? { producto_id: f.dataset.pid } : { catalogo_id: f.dataset.cat, unidad: $('.ri-uu', f).value, contenido: $('.ri-cont', f).value }; if ($('.ri-r', f).value !== '') o.rinde = $('.ri-r', f).value; else o.cantidad = $('.ri-c', f).value; return o; }),
                 equipos: $$('.req', c).map((f) => ({ equipo_id: $('.re-e', f).value, minutos: $('.re-m', f).value })) };
     try { await rpc('receta_guardar', { p_servicio: x.id, p }); cerrarModal(); await cServicios(cv);
       $('#cv').insertAdjacentHTML('afterbegin', '<p class="aviso ok" role="status">Insumos de ' + esc(x.nombre) + ' guardados.</p>'); } catch (e) { errorEn($('#err', c), e); }
@@ -1561,8 +1583,8 @@ function formInsumo(i, cat, cv) {
   const c = modal('<h3>' + (i ? 'Insumo' : cat ? 'Agregar del catálogo' : 'Insumo a mano') + '</h3>' +
     (cat ? '<p><b>' + esc(cat.nombre) + '</b><br><span class="muted">' + esc(cat.proveedor) + ' · ' + plata(cat.precio) + (cat.url ? ' · <a href="' + esc(cat.url) + '" target="_blank" rel="noopener">ver en la página</a>' : '') + '</span>' + (cat.precio_oferta != null ? '<br><span class="muted">El proveedor lo tiene en oferta a ' + plata(cat.precio_oferta) + ': el costo se toma con el precio normal, ' + plata(cat.precio) + '.</span>' : '') + '</p>' : '') +
     '<div class="grilla">' + (cat ? '' : '<div class="campo"><label for="in">Nombre</label><input id="in" value="' + esc(i ? i.nombre : '') + '"' + (i && i.catalogo_id ? ' disabled' : '') + '></div>') +
-    '<div class="campo"><label for="iu">Se mide en</label><select id="iu">' + Object.entries(UNIDAD_LARGA).map(([k, n]) => '<option value="' + k + '"' + ((i ? i.unidad : '') === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
-    '<div class="campo"><label for="ic">Cuánto trae el envase</label><input id="ic" type="number" min="0" step="any" inputmode="decimal" value="' + (i ? +i.contenido : '') + '" placeholder="Ej.: 650"></div>' +
+    '<div class="campo"><label for="iu">Se mide en</label><select id="iu">' + Object.entries(UNIDAD_LARGA).map(([k, n]) => '<option value="' + k + '"' + ((i ? i.unidad : cat ? cat.unidad : '') === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
+    '<div class="campo"><label for="ic">Cuánto trae el envase</label><input id="ic" type="number" min="0" step="any" inputmode="decimal" value="' + (i ? +i.contenido : cat && cat.contenido ? +cat.contenido : '') + '" placeholder="Ej.: 650"></div>' +
     (desdeCat ? '' : '<div class="campo"><label for="ip">Precio del envase</label><input id="ip" type="number" min="0" step="0.01" inputmode="decimal" value="' + (i && i.costo != null ? +i.costo : '') + '"></div>') + '</div>' +
     (desdeCat && i ? '<p class="muted">El precio (' + plata(i.costo) + ') lo actualiza el catálogo del proveedor cada semana.' + (i.url ? ' <a href="' + esc(i.url) + '" target="_blank" rel="noopener">Ver en la página</a>' : '') + '</p>' : '') +
     '<p class="muted">Ejemplo: un pote de 650 gramos → "gramos" y 650. Una caja de 100 gasas → "unidades" y 100.</p>' +
