@@ -135,7 +135,7 @@ button.enlace { background: none; border: 0; padding: 0; color: var(--marca); te
 .modal-x { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font: inherit; font-weight: 600; color: var(--fg); cursor: pointer }
 .pie { position: sticky; bottom: -14px; z-index: 3; margin: 0 -14px -14px; padding: 10px 14px; background: var(--surface); border-top: 1px solid var(--line); border-radius: 0 0 12px 12px }
 .ri-res, #rcat { max-height: 250px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; padding: 4px }
-.ri-res:empty, #rcat:empty { display: none }
+.ri-res:empty, #rcat:empty, p.aviso:empty { display: none }
 .login { max-width: 380px; margin: 40px auto; }
 .login img { width: 180px; display: block; margin: 0 auto 10px; border-radius: 12px }
 .cargando { text-align: center; color: var(--muted); padding: 30px 0 }
@@ -252,12 +252,13 @@ async function rpc(fn, args) {
   return data;
 }
 let MODAL_FIJO = false;   // la ventana de contraseña obligatoria no se cierra
+let AL_CERRAR = null;      // algo que hacer cuando se cierra la ventana
 function modal(html, fijo) {
-  MODAL_FIJO = !!fijo;
+  MODAL_FIJO = !!fijo; AL_CERRAR = null;
   $('#modalCaja').innerHTML = (fijo ? '' : '<div class="modal-top"><button type="button" class="modal-x" onclick="cerrarModal()">✕ Cerrar</button></div>') + html;
   $('#modal').hidden = false; $('#modalCaja').scrollTop = 0; return $('#modalCaja');
 }
-function cerrarModal() { $('#modal').hidden = true; $('#modalCaja').innerHTML = ''; MODAL_FIJO = false; }
+function cerrarModal() { $('#modal').hidden = true; $('#modalCaja').innerHTML = ''; MODAL_FIJO = false; const f = AL_CERRAR; AL_CERRAR = null; if (f) f(); }
 $('#modal').addEventListener('click', (e) => { if (e.target.id === 'modal' && !MODAL_FIJO) cerrarModal(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#modal').hidden && !MODAL_FIJO) cerrarModal(); });
 function errorEn(el, e) { el.innerHTML = '<p class="aviso error" role="alert">' + esc(e.message || e) + '</p>'; }
@@ -511,7 +512,8 @@ async function cobrar(t) {
       modal('<h3>Cobrado ✓</h3><p>Venta <b>' + esc(r.cobro.venta) + '</b> · total ' + plata(r.cobro.total) + '</p><p>Seña y a favor: ' + plata(r.cobro.sena_y_a_favor) + ' · cobrado ahora: <b>' + plata(r.cobro.cobrado) + '</b>' + (r.cobro.recibo ? ' · recibo ' + esc(r.cobro.recibo) : '') + '</p>' +
         (r.cobro.queda_debiendo > 0 ? '<p class="aviso">Queda debiendo <b>' + plata(r.cobro.queda_debiendo) + '</b> en su cuenta corriente (Clientas → su ficha → Cobrar deuda).</p>' : '') +
         '<div class="fila"><button class="btn" id="fin">Listo</button></div>');
-      $('#fin').onclick = () => { cerrarModal(); mostrar(VISTA); };
+      AL_CERRAR = () => mostrar(VISTA);   // se cierre como se cierre (Listo, ✕, afuera, Escape), la pantalla de atrás se actualiza
+      $('#fin').onclick = () => cerrarModal();
     } catch (e) { errorEn($('#err', c), e); }
   });
 }
@@ -935,7 +937,7 @@ async function compraEditor(b, kv) {
   const c = modal('<h3>Compra en carga · ' + esc(b.proveedor) + '</h3><p class="muted">' + esc(b.numero_txt) + ' · ' + fFecha(String(b.fecha).slice(0, 10)) + ' · ' + (b.condicion === 'contado' ? 'se paga al confirmar' : 'queda en la cuenta del proveedor') +
     ' · <button type="button" class="enlace" id="eenc">cambiar encabezado</button></p>' +
     '<h4>Renglones</h4>' + (b.items.length ? '<table class="tgrid" id="trc"><thead><tr><th>Código</th><th>Producto</th><th class="n">Cant.</th><th class="n">Precio</th><th class="n">Subtotal</th><th></th></tr></thead><tbody>' +
-      b.items.map((i) => '<tr><td data-l="Código">' + esc(i.codigo || '—') + '</td><td data-l="Producto">' + esc(i.producto) + '</td><td data-l="Cant." class="n">' + cantU(i.cantidad) + (i.unidad === 'u' ? ' u' : '') + (i.unidad === 'u' && i.unidades_envase > 1 ? '<br><span class="muted">' + cantU(i.cantidad / i.unidades_envase) + ' caja' + (i.cantidad / i.unidades_envase === 1 ? '' : 's') + ' de ' + i.unidades_envase + '</span>' : '') + '</td><td data-l="Precio" class="n">' + plata(i.precio) + '</td>' +
+      b.items.map((i) => '<tr><td data-l="Código">' + esc(i.codigo || '—') + '</td><td data-l="Producto">' + esc(i.producto) + '</td><td data-l="Cant." class="n">' + cantU(i.cantidad) + (i.unidad === 'u' ? ' u' : '') + (i.unidad === 'u' && i.unidades_envase > 1 ? ' <span class="muted">(' + cantU(i.cantidad / i.unidades_envase) + ' caja' + (i.cantidad / i.unidades_envase === 1 ? '' : 's') + ' de ' + i.unidades_envase + ')</span>' : '') + '</td><td data-l="Precio" class="n">' + plata(i.precio) + '</td>' +
         '<td data-l="Subtotal" class="n">' + plata(i.subtotal) + '</td><td class="acc"><button class="btn sec chico" data-cr="' + i.id + '">Cambiar</button><button class="btn sec chico" data-qr="' + i.id + '">Quitar</button></td></tr>').join('') +
       '</tbody></table>' : '<p class="muted">Todavía no hay renglones.</p>') + '<p class="total">Total ' + plata(b.total) + '</p>' +
     '<div class="card"><h4>Agregar renglón</h4><div class="campo"><label for="rq">Código del proveedor o nombre</label><input id="rq" autocomplete="off" placeholder="' + (b.tiene_catalogo ? 'Ej.: 4522264 o crema' : 'Ej.: gasas') + '"></div><div id="rres" class="lista"></div><div id="rlin"></div></div>' +
@@ -954,7 +956,7 @@ async function compraEditor(b, kv) {
     try { const r = await rpc('compra_buscar', { p_proveedor: b.proveedor_id, p_texto: q });
       $('#rres', c).innerHTML = r.length ? r.map((x, k) => '<button type="button" class="item" data-k="' + k + '"><span><b>' + esc(x.codigo || '') + '</b> ' + esc(x.nombre) +
         (x.origen === 'catalogo' ? ' <span class="chip info">de la lista del proveedor</span>' : '') + (x.sin_codigo_proveedor ? ' <span class="chip">sin código de este proveedor</span>' : '') + '</span><span>' +
-        (x.precio != null ? plata(x.precio) : '') + (x.oferta ? '<br><span class="muted">oferta</span>' : '') + '</span></button>').join('') : '<p class="muted">No aparece. Si es un insumo nuevo, cargalo en Calculador de costos → Insumos.</p>';
+        (x.precio != null ? plata(x.precio) + (x.unidad === 'u' ? ' c/u' : '') : '') + (x.unidad === 'u' && x.unidades_envase > 1 && x.precio_envase != null ? '<br><span class="muted">caja de ' + x.unidades_envase + ': ' + plata(x.precio_envase) + '</span>' : '') + (x.oferta ? '<br><span class="muted">oferta</span>' : '') + '</span></button>').join('') : '<p class="muted">No aparece. Si es un insumo nuevo, cargalo en Calculador de costos → Insumos.</p>';
       $$('[data-k]', $('#rres', c)).forEach((y) => y.onclick = () => { $('#rres', c).innerHTML = ''; formRenglon(c, b, r[+y.dataset.k], null, recargar); });
     } catch (e) { errorEn($('#rres', c), e); } }, 300); };
   $('#bconf', c).onclick = () => conBoton($('#bconf', c), async () => {
@@ -1178,7 +1180,7 @@ function formNC(x, kv) {
     '<div class="campo"><label for="nmot">Motivo</label><input id="nmot" placeholder="Ej.: vinieron 2 fallados"></div>' +
     '<div class="campo"><label for="nnum">Número de la nota del proveedor <span>(si la mandó)</span></label><input id="nnum"></div>' +
     '<label class="check"><input type="checkbox" id="ndev"> Se devuelve mercadería (sale del stock con un remito de devolución)</label>' +
-    '<div id="nitems" hidden>' + x.items.map((i) => '<div class="campo"><label>' + esc(i.producto) + ' <span>(compró ' + cantU(i.cantidad) + ')</span></label><input class="nc-c" data-p="' + i.producto_id + '" data-u="' + i.precio + '" type="number" min="0" step="any" inputmode="decimal" value="0"></div>').join('') + '</div>' +
+    '<div id="nitems" hidden>' + x.items.map((i) => '<div class="campo"><label>' + esc(i.producto) + ' <span>(compró ' + cantU(i.cantidad) + (i.unidad === 'u' ? (+i.cantidad === 1 ? ' unidad' : ' unidades') : '') + ')</span></label><input class="nc-c" data-p="' + i.producto_id + '" data-u="' + i.precio + '" type="number" min="0" step="any" inputmode="decimal" value="0"></div>').join('') + '</div>' +
     '<div class="campo" id="nimpb"><label for="nimp">Importe que acredita el proveedor</label><input id="nimp" type="number" min="0" step="0.01" inputmode="decimal"></div>' +
     '<div class="fila"><button class="btn" id="ok">Guardar nota de crédito</button><button class="btn sec" onclick="cerrarModal()">Volver</button></div><div id="err"></div>');
   $('#ndev', c).onchange = () => { $('#nitems', c).hidden = !$('#ndev', c).checked; $('#nimpb', c).hidden = $('#ndev', c).checked; };
@@ -1238,6 +1240,8 @@ function formProveedor(p, kv) {
   if ($('#baja', c)) $('#baja', c).onclick = () => conBoton($('#baja', c), guardar({ estado: 'inactivo' }));
   if ($('#alta', c)) $('#alta', c).onclick = () => conBoton($('#alta', c), guardar({ estado: 'activo' }));
 }
+// el envase de un producto: "caja de 5 u", "por unidad" o "envase 650 g"
+function envaseTxt(unidad, cont) { return unidad === 'u' ? (+cont > 1 ? 'caja de ' + cant(cont) + ' u' : 'por unidad') : 'envase ' + cant(cont || 1) + ' ' + UNIDAD[unidad]; }
 // cuánto hay de un producto: en unidades (ampollas, gasas) o por envase (potes y frascos en g / ml)
 function enStock(x, n) {
   if (x.unidad === 'u') return cantU(n) + (+n === 1 ? ' unidad' : ' unidades') + (x.unidades_envase > 1 ? ' <span class="muted">(caja de ' + x.unidades_envase + ')</span>' : '');
@@ -1573,7 +1577,7 @@ async function editarReceta(x, cv) {
       '<div class="grilla"><div class="campo"><label>Se mide en</label><select class="ri-uu">' + Object.entries(UNIDAD_LARGA).map(([k, n]) => '<option value="' + k + '"' + (k === r.unidad ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
       '<div class="campo"><label>Cuánto trae el envase</label><input class="ri-cont" type="number" min="0" step="any" inputmode="decimal" placeholder="Ej.: 15"></div>' +
       '<div class="campo"><label>Precio del envase</label><input class="ri-pre" type="number" min="0" step="any" inputmode="decimal" placeholder="Ej.: 9000"></div></div>'
-    : '<p><b>' + esc(r.nombre) + '</b> <span class="muted">· ' + (r.unidad === 'u' ? 'caja de ' : 'envase ') + cant(r.contenido || 1) + ' ' + UNIDAD[r.unidad] + (r.activo === false ? ' · dado de baja: sacalo o elegí otro' : '') + '</span></p>') +
+    : '<p><b>' + esc(r.nombre) + '</b> <span class="muted">· ' + envaseTxt(r.unidad, r.contenido) + (r.activo === false ? ' · dado de baja: sacalo o elegí otro' : '') + '</span></p>') +
     (r.nuevo ? '<p class="muted">Es de la lista del proveedor: se carga solo al guardar. Revisá cómo se mide y cuánto trae el envase.</p><div class="grilla"><div class="campo"><label>Se mide en</label><select class="ri-uu">' +
       Object.entries(UNIDAD_LARGA).map(([k, n]) => '<option value="' + k + '"' + (k === r.unidad ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div>' +
       '<div class="campo"><label>Cuánto trae el envase</label><input class="ri-cont" type="number" min="0" step="any" inputmode="decimal" value="' + (r.contenido || 1) + '"></div></div>' : '') +
@@ -1614,7 +1618,7 @@ async function editarReceta(x, cv) {
         const q = $('.ri-q', f).value.trim(); if (q.length < 2) { $('.ri-res', f).innerHTML = q ? '<p class="muted">Escribí al menos 2 letras.</p>' : ''; return; }
         try { const r = await rpc('insumo_receta_buscar', { p_texto: q });
           $('.ri-res', f).innerHTML = r.length ? r.map((x, k) => '<button type="button" class="item" data-k="' + k + '"><span><b>' + esc(x.nombre) + '</b><br><span class="muted">' +
-            (x.origen === 'insumo' ? 'ya cargado' : esc(x.proveedor || 'lista del proveedor') + (x.codigo ? ' · cód. ' + esc(x.codigo) : '')) + ' · envase ' + cant(x.contenido) + ' ' + UNIDAD[x.unidad] + '</span></span><b>' + (x.costo != null ? plata(x.costo) : '') + '</b></button>').join('')
+            (x.origen === 'insumo' ? 'ya cargado' : esc(x.proveedor || 'lista del proveedor') + (x.codigo ? ' · cód. ' + esc(x.codigo) : '')) + ' · ' + envaseTxt(x.unidad, x.contenido) + '</span></span><b>' + (x.costo != null ? plata(x.costo) : '') + (x.unidad === 'u' && +x.contenido > 1 && x.costo_por_unidad != null ? '<br><span class="muted">' + plata(x.costo_por_unidad) + ' c/u</span>' : '') + '</b></button>').join('')
             : '<p class="muted">No está en tus insumos ni en la lista del proveedor. Probá con otra palabra o <button type="button" class="enlace ri-man">cargalo a mano acá</button>.</p>';
           if ($('.ri-man', f)) $('.ri-man', f).onclick = () => { f.outerHTML = filaIns({ manual: true, nombre: q, unidad: 'ml' }); enganchar(); };
           $$('[data-k]', $('.ri-res', f)).forEach((b) => b.onclick = () => { const x = r[+b.dataset.k];
@@ -1642,7 +1646,7 @@ async function cInsumos(cv) {
   cv.innerHTML = '<p class="aviso">Los productos que usan en los servicios. Buscalos en el catálogo del proveedor (el precio se actualiza solo cada semana) o cargalos a mano.</p>' +
     '<div class="fila"><button class="btn" id="bcat">Buscar en el catálogo</button><button class="btn sec" id="bman">+ Cargar a mano</button></div>' +
     '<div class="campo"><label for="fins">Filtrar</label><input id="fins" placeholder="Escribí parte del nombre"></div>' +
-    '<div class="lista" id="lins">' + (ins.length ? ins.map((i) => '<button type="button" class="item" data-ins="' + i.id + '" data-n="' + esc(i.nombre.toLowerCase()) + '"><span><b>' + esc(i.nombre) + '</b><br><span class="muted">' + (i.unidad === 'u' ? 'Caja de ' : 'Envase ') + cant(i.contenido) + ' ' + UNIDAD[i.unidad] +
+    '<div class="lista" id="lins">' + (ins.length ? ins.map((i) => '<button type="button" class="item" data-ins="' + i.id + '" data-n="' + esc(i.nombre.toLowerCase()) + '"><span><b>' + esc(i.nombre) + '</b><br><span class="muted">' + (s => s[0].toUpperCase() + s.slice(1))(envaseTxt(i.unidad, i.contenido)) +
       ' · ' + (i.costo_por_unidad != null ? plata(i.costo_por_unidad) + ' por ' + UNIDAD[i.unidad] : 'sin precio') + ' · ' + (i.proveedor ? esc(i.proveedor) : 'cargado a mano') + (i.en_catalogo === false ? ' · ya no figura en el catálogo' : '') +
       ' · ' + (i.servicios ? 'en ' + i.servicios + ' servicio' + (i.servicios > 1 ? 's' : '') : 'sin usar') + '</span></span><b>' + (i.costo != null ? plata(i.costo) : '<span class="chip mal">sin precio</span>') + '</b></button>').join('')
       : '<p class="muted">Todavía no hay insumos cargados.</p>') + '</div>';
