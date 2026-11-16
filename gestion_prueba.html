@@ -108,6 +108,12 @@ button.enlace { background: none; border: 0; padding: 0; color: var(--marca); te
   .tgrid td { display: flex; justify-content: space-between; gap: 12px; border: 0; padding: 3px 0; text-align: right }
   .tgrid td::before { content: attr(data-l); color: var(--muted); font-size: .8rem; text-align: left }
   .tgrid td.n { white-space: normal } .tgrid td.acc { justify-content: flex-end; flex-wrap: wrap; padding-top: 6px; white-space: normal } .tgrid td.acc::before { content: none } }
+/* en las ventanas (angostas) los renglones van siempre como tarjetas, también en la compu */
+.modal .tgrid thead { display: none } .modal .tgrid, .modal .tgrid tbody, .modal .tgrid tr, .modal .tgrid td { display: block; width: 100% }
+.modal .tgrid tr { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; background: var(--surface) }
+.modal .tgrid td { display: flex; justify-content: space-between; gap: 12px; border: 0; padding: 3px 0; text-align: right }
+.modal .tgrid td::before { content: attr(data-l); color: var(--muted); font-size: .8rem; text-align: left }
+.modal .tgrid td.n { white-space: normal } .modal .tgrid td.acc { justify-content: flex-end; flex-wrap: wrap; padding-top: 6px; white-space: normal } .modal .tgrid td.acc::before { content: none }
 .sub { display: flex; gap: 6px; flex-wrap: wrap }
 .sub button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px }
 .sub button[aria-pressed="true"] { background: var(--marca); color: var(--oro-claro); border-color: var(--marca) }
@@ -937,7 +943,7 @@ async function compraEditor(b, kv) {
   const c = modal('<h3>Compra en carga · ' + esc(b.proveedor) + '</h3><p class="muted">' + esc(b.numero_txt) + ' · ' + fFecha(String(b.fecha).slice(0, 10)) + ' · ' + (b.condicion === 'contado' ? 'se paga al confirmar' : 'queda en la cuenta del proveedor') +
     ' · <button type="button" class="enlace" id="eenc">cambiar encabezado</button></p>' +
     '<h4>Renglones</h4>' + (b.items.length ? '<table class="tgrid" id="trc"><thead><tr><th>Código</th><th>Producto</th><th class="n">Cant.</th><th class="n">Precio</th><th class="n">Subtotal</th><th></th></tr></thead><tbody>' +
-      b.items.map((i) => '<tr><td data-l="Código">' + esc(i.codigo || '—') + '</td><td data-l="Producto">' + esc(i.producto) + '</td><td data-l="Cant." class="n">' + cantU(i.cantidad) + (i.unidad === 'u' ? ' u' : '') + (i.unidad === 'u' && i.unidades_envase > 1 ? ' <span class="muted">(' + cantU(i.cantidad / i.unidades_envase) + ' caja' + (i.cantidad / i.unidades_envase === 1 ? '' : 's') + ' de ' + i.unidades_envase + ')</span>' : '') + '</td><td data-l="Precio" class="n">' + plata(i.precio) + '</td>' +
+      b.items.map((i) => '<tr><td data-l="Código">' + esc(i.codigo || '—') + '</td><td data-l="Producto">' + esc(i.producto) + '</td><td data-l="Cant." class="n"><span>' + cantU(i.cantidad) + (i.unidad === 'u' ? ' u' : '') + (i.unidad === 'u' && i.unidades_envase > 1 ? '<br><small class="muted">' + cantU(i.cantidad / i.unidades_envase) + ' caja' + (i.cantidad / i.unidades_envase === 1 ? '' : 's') + ' de ' + i.unidades_envase + '</small>' : '') + '</span></td><td data-l="Precio" class="n">' + plata(i.precio) + '</td>' +
         '<td data-l="Subtotal" class="n">' + plata(i.subtotal) + '</td><td class="acc"><button class="btn sec chico" data-cr="' + i.id + '">Cambiar</button><button class="btn sec chico" data-qr="' + i.id + '">Quitar</button></td></tr>').join('') +
       '</tbody></table>' : '<p class="muted">Todavía no hay renglones.</p>') + '<p class="total">Total ' + plata(b.total) + '</p>' +
     '<div class="card"><h4>Agregar renglón</h4><div class="campo"><label for="rq">Código del proveedor o nombre</label><input id="rq" autocomplete="off" placeholder="' + (b.tiene_catalogo ? 'Ej.: 4522264 o crema' : 'Ej.: gasas') + '"></div><div id="rres" class="lista"></div><div id="rlin"></div></div>' +
